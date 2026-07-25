@@ -1,0 +1,26 @@
+# Dependencies
+/vendor/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Storage (keep structure, ignore contents)
+storage/logs/*
+storage/cache/*
+storage/uploads/*
+storage/queue/*
+!storage/**/.gitkeep
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+/coverage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------
+# CashNest API — root .htaccess (defense in depth)
+#
+# On correctly configured hosting the document root points at `public/`, so this
+# file is never hit. On shared hosts where the docroot cannot be changed and
+# points at the project root, this transparently forwards traffic into public/
+# while keeping framework, config, and storage folders unreachable.
+# ---------------------------------------------------------------------------
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Send everything into the public directory.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Block direct access to sensitive locations regardless of rewrite support.
+RedirectMatch 403 ^/?(\.env|composer\.(json|lock)|core|app|config|routes|storage|database|tests|vendor)(/|$)
