@@ -3,8 +3,12 @@
 > **Project:** CashNest
 > **Type:** Rewards & Earning Platform
 > **Author:** Software Architecture Team
-> **Status:** Blueprint — v1.0
+> **Status:** Blueprint — v1.1
 > **Scope:** End-to-end architecture for Flutter Android app, PHP MVC backend, PHP admin panel, MySQL database, Firebase Cloud Messaging, shared hosting, GitHub repository, and GitHub Actions APK builds.
+>
+> **Changelog:**
+> - **v1.1** — Added 10 production-ready modules: Multi Ad Network Management, Payment Gateway Management, Banner Management, Announcement System, App Version Management, Remote Configuration System, CMS Module, Database Backup & Restore, Dynamic Home Screen Management, Theme Management. Updated Folder Structure, Database, API, Admin Panel, Flutter, Security, and Scalability sections accordingly. All v1.0 content retained.
+> - **v1.0** — Initial complete architecture blueprint.
 
 ---
 
@@ -140,8 +144,21 @@ backend/
 │   │   ├── Withdraw/
 │   │   ├── Profile/
 │   │   ├── Notification/
-│   │   └── Support/
+│   │   ├── Support/
+│   │   ├── Ads/                  # Multi ad-network config (AdMob/MAX/Unity)
+│   │   ├── Payment/              # Payment gateway management
+│   │   ├── Banner/              # Banner management
+│   │   ├── Announcement/        # Announcement system
+│   │   ├── AppVersion/          # Force update / maintenance mode
+│   │   ├── RemoteConfig/        # Remote configuration
+│   │   ├── Cms/                 # Privacy / Terms / About / FAQ
+│   │   ├── Backup/             # DB backup & restore (admin-only)
+│   │   ├── HomeLayout/         # Dynamic home screen
+│   │   └── Theme/              # Theme management
 │   ├── Services/                 # Business logic (reward math, fraud, ledger)
+│   │   # + AdNetworkService, PaymentGatewayService, BannerService,
+│   │   #   AnnouncementService, AppVersionService, RemoteConfigService,
+│   │   #   CmsService, BackupService, HomeLayoutService, ThemeService
 │   ├── Repositories/             # Data access (PDO queries per aggregate)
 │   ├── Models/                   # Domain entities / DTOs
 │   ├── Middleware/               # Auth (JWT), RateLimit, CORS, Validation
@@ -174,7 +191,10 @@ admin/
 │   ├── assets/                   # CSS, JS, images (bundled)
 │   └── .htaccess
 ├── app/
-│   ├── Controllers/             # Dashboard, Users, Wallet, Rewards, ...
+│   ├── Controllers/             # Dashboard, Users, Wallet, Rewards, Offerwall,
+│   │                            #   Ads/Networks, Payment, Banner, Announcement,
+│   │                            #   AppVersion, RemoteConfig, Cms, Backup,
+│   │                            #   HomeLayout, Theme, Withdraw, Referral, ...
 │   ├── Services/                # Reuses/wraps backend service layer where shared
 │   ├── Repositories/
 │   ├── Views/                   # Server-rendered templates (layout, partials, pages)
@@ -225,10 +245,14 @@ mobile/
 │   │   │   ├── profile/
 │   │   │   ├── notifications/
 │   │   │   ├── settings/
-│   │   │   └── support/
-│   │   ├── widgets/             # Shared reusable widgets
+│   │   │   ├── support/
+│   │   │   ├── announcements/   # In-app announcement bar/popup
+│   │   │   └── legal/           # CMS pages: Privacy, Terms, About, FAQ
+│   │   ├── widgets/             # Shared reusable widgets (+ dynamic banner, home blocks)
 │   │   └── state/              # State management (Bloc/Riverpod/Provider)
-│   └── services/               # FCM, analytics, deep links
+│   └── services/               # FCM, analytics, deep links,
+│                               #   ad_networks (AdMob/MAX/Unity mediation),
+│                               #   remote_config, theme_service, version_gate
 ├── assets/                      # Images, fonts, lottie, translations
 ├── test/
 └── pubspec.yaml
@@ -314,6 +338,31 @@ Offerwall Network
                         → [NotificationService.push] ("You earned X coins!")
                         → [LeaderboardService.markDirty]
 ```
+
+### 3.4 Extended Production Modules (v1.1)
+
+These modules harden CashNest for production operations and give operators full runtime control without app redeploys. Like the core modules, each spans backend (Controller + Service + Repository), admin panel (management screen), and — where user-facing — the app.
+
+| # | Module | User App | Backend Service | Admin Panel |
+|---|--------|----------|-----------------|-------------|
+| 20 | **Multi Ad Network Management** | Renders active network's ad units | AdNetworkService (AdMob / AppLovin MAX / Unity Ads) | Ads Management → Networks |
+| 21 | **Payment Gateway Management** | Payout method selection reflects active gateways | PaymentGatewayService | Payment Gateway Management |
+| 22 | **Banner Management** | Home/promo banners (dynamic) | BannerService | Banner Management |
+| 23 | **Announcement System** | In-app announcement bar / popup | AnnouncementService | Announcement Management |
+| 24 | **App Version Management** | Force-update & maintenance gate | AppVersionService | App Version Management |
+| 25 | **Remote Configuration** | Live feature flags & values | RemoteConfigService | Remote Config Management |
+| 26 | **CMS (Legal & Content)** | Privacy, Terms, About, FAQ pages | CmsService | CMS Management |
+| 27 | **Database Backup & Restore** | — | BackupService | Backup & Restore |
+| 28 | **Dynamic Home Screen** | Server-driven home layout | HomeLayoutService | Home Screen Builder |
+| 29 | **Theme Management** | Runtime theming (colors/logo/mode) | ThemeService | Theme Management |
+
+**Design notes for the extended set:**
+
+- **Multi Ad Network** — a single `AdNetworkService` abstracts three providers (**AdMob, AppLovin MAX, Unity Ads**) behind one interface; the admin toggles which network is active per placement (banner/interstitial/rewarded) and per country/priority, so **enable/disable happens from Admin with no app release**. Rewarded-ad completion still verifies server-side before crediting (ties into Wallet/Ledger).
+- **Payment Gateway Management** — abstracts payout/collection gateways (e.g., UPI/Razorpay, PayPal, Paytm, gift-card providers) behind a `PaymentGatewayService`; admin enables/configures credentials and per-gateway limits. Complements the existing Withdraw module (which handles the request lifecycle) by standardizing *how* payouts are executed.
+- **Banner, Announcement, CMS, Home Screen, Theme, Remote Config** — all **server-driven content/config** modules. The app fetches them on launch/refresh, enabling live changes to look, messaging, layout, and behavior without publishing a new APK.
+- **App Version Management** — centralizes **Force Update** and **Maintenance Mode** (subsumes and formalizes the earlier `/settings/app` gate).
+- **Database Backup & Restore** — operational safety module for scheduled and on-demand backups with restore workflow, aligned to shared-hosting constraints (see §12).
 
 ---
 
@@ -418,6 +467,90 @@ Offerwall Network
 - `offerwall_providers` fans out to offers, conversions, CPA offers, and postback logs.
 - `referrals` self-references `users` twice (referrer + referee).
 - `admin_roles` ↔ `admin_permissions` is the RBAC many-to-many backbone.
+
+### 4.11 Extended Production Modules (v1.1)
+
+> Tables listed with purpose and relationships only (no schema DDL). All admin-editable config tables are covered by `admin_audit_logs`.
+
+#### Multi Ad Network Management
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `ad_networks` | Registered networks (admob / applovin_max / unity_ads) with credentials/app IDs and enabled flag. | 1—N `ad_units`. |
+| `ad_units` | Per-network ad units by type (banner/interstitial/rewarded), status, per-country/priority ordering. | N—1 `ad_networks`, N—1 `ads_placements`. |
+| `ad_network_events` | Impression/completion logs for rewarded ads (feeds fraud + reporting). | N—1 `users`, N—1 `ad_units`. |
+
+> Extends the existing `ads_placements`: a placement now resolves to the highest-priority **enabled** unit across networks (mediation waterfall configured in admin).
+
+#### Payment Gateway Management
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `payment_gateways` | Supported gateways (UPI/Razorpay, PayPal, Paytm, gift-card, bank) with credentials, fees, min/max, enabled flag. | 1—N `withdraw_methods`, 1—N `gateway_transactions`. |
+| `gateway_transactions` | Execution records for payouts routed through a gateway (status, external_ref, idempotency key). | N—1 `payment_gateways`, N—1 `withdraw_requests`. |
+
+> Links to existing `withdraw_methods`/`withdraw_requests`: the Withdraw module owns the *request*, the gateway module owns the *execution*.
+
+#### Banner Management
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `banners` | Promotional banners (image, title, action_type, deep_link/url, placement, order, active window, target audience). | Referenced by app home/promo. |
+
+#### Announcement System
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `announcements` | In-app announcements (title, body, type: bar/popup, priority, audience, start/end, active). | Referenced by app. |
+| `announcement_reads` | Per-user dismissed/seen state (avoids re-showing). | N—1 `users`, N—1 `announcements`. |
+
+#### App Version Management
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `app_versions` | Per-platform version records (version_code, min_supported, force_update flag, changelog, store_url). | Standalone (queried at launch). |
+| `maintenance_windows` | Maintenance-mode state (enabled, message, scheduled start/end). | Standalone. |
+
+#### Remote Configuration System
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `remote_configs` | Typed key–value flags/values (bool/int/string/json), environment, audience segment, active. | Standalone (superset of `app_settings`; feature-flag authority). |
+
+#### CMS Module (Legal & Content)
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `cms_pages` | Editable content pages by slug (privacy-policy, terms, about, faq-intro), title, body (HTML/markdown), version, published flag, locale. | Standalone. |
+| `faq_categories` | Grouping for FAQ entries. | 1—N `faqs`. |
+
+> Consolidates the existing `faqs` table under CMS; `faqs` now optionally references `faq_categories`.
+
+#### Database Backup & Restore
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `backup_jobs` | Backup records (type: manual/scheduled, status, file path/location, size, checksum, created_by). | N—1 `admins`. |
+| `restore_logs` | Restore operation audit (source backup, status, performed_by, timestamps). | N—1 `backup_jobs`, N—1 `admins`. |
+
+#### Dynamic Home Screen Management
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `home_sections` | Ordered home-screen blocks (type: banner_carousel/quick_actions/offers/leaderboard/custom, config json, order, active, audience). | Referenced by app home. |
+
+#### Theme Management
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `themes` | Theme definitions (primary/secondary/accent colors, logo asset, font, light/dark defaults, active). | Referenced by app at launch. |
+
+### 4.12 Relationship Summary Additions (v1.1)
+
+- `ad_networks` → `ad_units` → resolved by `ads_placements` for the mediation waterfall; rewarded events land in `ad_network_events` and feed the Wallet ledger + fraud engine.
+- `payment_gateways` executes what `withdraw_requests` authorize, recorded immutably in `gateway_transactions`.
+- Content/config tables (`banners`, `announcements`, `home_sections`, `themes`, `cms_pages`, `remote_configs`, `app_versions`) are **server-driven** and consumed by the app on launch/refresh — no code deploy required to change them.
+- `backup_jobs` / `restore_logs` are admin-governance tables, audited like all admin actions.
 
 ---
 
@@ -569,7 +702,87 @@ Offerwall Network
 | GET | `/ads/placements` | Ad unit config per placement. |
 | POST | `/ads/rewarded/complete` | Verify rewarded-ad completion → credit. |
 
-### 5.16 Admin API (namespaced `/admin/*`, staff-auth)
+### 5.16 Ad Networks Module (app)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/ads/config` | Active network + unit IDs per placement (AdMob/MAX/Unity, mediation order). |
+| POST | `/ads/impression` | Log an impression (optional analytics). |
+| POST | `/ads/rewarded/verify` | Server-verify rewarded completion → credit (supersedes `/ads/rewarded/complete`). |
+
+### 5.17 Payment Gateways Module (app)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/payment/gateways` | Active gateways available for payout + limits/fees. |
+
+> Payout requests themselves continue through the Withdraw module (§5.11); gateway selection is surfaced there.
+
+### 5.18 Banners Module (app)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/banners` | Active banners for a placement (home/promo), ordered, audience-filtered. |
+
+### 5.19 Announcements Module (app)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/announcements` | Active announcements for the user (bar/popup). |
+| POST | `/announcements/{id}/seen` | Mark announcement seen/dismissed. |
+
+### 5.20 App Version Module (app)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/app/version` | Latest version, min-supported, force-update flag, store URL. | public |
+| GET | `/app/maintenance` | Maintenance-mode status + message. | public |
+
+> These formalize/replace the earlier `/settings/app` gate.
+
+### 5.21 Remote Config Module (app)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/config` | Effective remote config / feature flags for the client (segment-aware). | public/user |
+
+### 5.22 CMS Module (app)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/cms/{slug}` | Fetch a content page (privacy-policy, terms, about). | public |
+| GET | `/cms/faq` | FAQ entries grouped by category. | public |
+
+### 5.23 Home Layout Module (app)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/home/layout` | Ordered, server-driven home-screen sections + their config. |
+
+### 5.24 Theme Module (app)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/theme` | Active theme (colors, logo, font, light/dark defaults). | public/user |
+
+### 5.25 Admin API — Extended Modules (namespaced `/admin/*`, staff-auth)
+
+In addition to the core admin endpoints, the extended modules expose admin CRUD + toggle endpoints, all RBAC-guarded and audited:
+
+| Module | Representative Admin Endpoints |
+|--------|-------------------------------|
+| Ad Networks | `GET/POST/PUT /admin/ad-networks`, `PUT /admin/ad-networks/{id}/toggle`, `.../ad-units` CRUD |
+| Payment Gateways | `GET/POST/PUT /admin/payment-gateways`, `PUT /admin/payment-gateways/{id}/toggle` |
+| Banners | `GET/POST/PUT/DELETE /admin/banners`, reorder |
+| Announcements | `GET/POST/PUT/DELETE /admin/announcements` |
+| App Version | `GET/PUT /admin/app-versions`, `PUT /admin/maintenance` |
+| Remote Config | `GET/POST/PUT/DELETE /admin/remote-configs` |
+| CMS | `GET/POST/PUT /admin/cms/pages`, `.../faq` CRUD |
+| Backup & Restore | `GET/POST /admin/backups`, `POST /admin/backups/{id}/restore`, `GET /admin/backups/{id}/download` |
+| Home Layout | `GET/POST/PUT/DELETE /admin/home-sections`, reorder |
+| Theme | `GET/POST/PUT /admin/themes`, `PUT /admin/themes/{id}/activate` |
+
+### 5.26 Admin API — Core Modules (namespaced `/admin/*`, staff-auth)
 
 Grouped endpoints exist for each admin module (Users, Wallet, Rewards, Offerwall, Ads, Withdraw, Referral, Notifications, Reports, Settings) covering list/detail/create/update/status-change/export operations. These are consumed by the server-rendered admin panel and protected by admin session + RBAC (detailed in §6).
 
@@ -606,6 +819,21 @@ Permissions are granular (`module.action`, e.g. `withdraw.approve`, `user.ban`) 
 | **Reports** | Financial (issued vs redeemed), user growth, offer performance, withdrawal reports; CSV export. |
 | **Settings** | App config/feature flags, maintenance mode, force-update version, currency thresholds, admin/role management. |
 
+#### Extended Modules (v1.1)
+
+| Module | Capabilities |
+|--------|--------------|
+| **Ad Network Management** | Register/configure **AdMob, AppLovin MAX, Unity Ads**; set app IDs & unit IDs per placement (banner/interstitial/rewarded); **enable/disable each network**; set mediation priority/waterfall & per-country targeting; view impression/rewarded reports. |
+| **Payment Gateway Management** | Add/configure gateways (credentials, fees, min/max), **enable/disable per gateway**, map gateways to payout methods, view gateway transaction logs. |
+| **Banner Management** | CRUD banners (image, action/deep-link, placement, order), schedule active windows, target audience, drag-order. |
+| **Announcement Management** | Compose bar/popup announcements, set priority/audience/schedule, activate/deactivate, view reach. |
+| **App Version Management** | Set latest & minimum-supported version per platform, **toggle Force Update**, edit store URLs & changelog, **toggle Maintenance Mode** with custom message/schedule. |
+| **Remote Config Management** | Create/edit typed flags & values, scope by environment/audience segment, activate instantly (feature-flag control). |
+| **CMS Management** | Rich-text edit **Privacy Policy, Terms, About, FAQ** (with categories); versioning, publish/unpublish, locale variants. |
+| **Backup & Restore** | Trigger on-demand backup, view scheduled backups, download backup files, **restore from a selected backup** (guarded, dual-confirmation), integrity/checksum display. |
+| **Home Screen Builder** | Add/reorder/toggle home sections (banner carousel, quick actions, offers, leaderboard, custom), configure each block, target audience — **live dynamic home**. |
+| **Theme Management** | Edit colors (primary/secondary/accent), upload logo, choose font, set light/dark defaults, **activate a theme** applied app-wide on next launch/refresh. |
+
 ### 6.3 Admin UX & Security Controls
 
 - **Two-factor** login for admin accounts.
@@ -613,6 +841,7 @@ Permissions are granular (`module.action`, e.g. `withdraw.approve`, `user.ban`) 
 - **Confirmation + reason** required for money-affecting actions (manual credit, withdrawal approval).
 - **Dual-control (optional)** for large withdrawals — one initiates, another approves.
 - **Audit trail** viewable per entity ("who changed what, when").
+- **Restricted destructive actions (v1.1)** — **Database Restore**, **Ad Network / Payment Gateway credential edits**, and **Maintenance Mode** are limited to **Super Admin**, require re-authentication + explicit confirmation, and are fully audited. Payment/ad-network secrets are write-only in the UI (masked, never displayed after save).
 
 ---
 
@@ -645,6 +874,10 @@ Presentation (Widgets + State) → Domain (UseCases + Entities) → Data (Reposi
 | **Notifications** | Inbox list, detail, mark-read. |
 | **Settings** | Preferences, notif toggles, language, logout, delete account. |
 | **Support** | FAQ, ticket list, ticket thread, new ticket. |
+| **Announcements** *(v1.1)* | Announcement bar on home + full-screen popup for high-priority notices. |
+| **Legal/CMS** *(v1.1)* | Privacy Policy, Terms, About, FAQ pages rendered from CMS content. |
+
+> **Dynamic surfaces (v1.1):** Home layout, banners, theme, remote config, and the version/maintenance gate are **not hard-coded screens** — they are driven by server responses and rendered generically, so operators change them without an app release.
 
 ### 7.3 Cross-Cutting App Concerns
 
@@ -657,6 +890,10 @@ Presentation (Widgets + State) → Domain (UseCases + Entities) → Data (Reposi
 - **Analytics:** Firebase Analytics events for funnels (login, earn, withdraw).
 - **Localization:** i18n-ready with translation assets.
 - **Anti-abuse client signals:** device fingerprint, emulator/root detection hints sent to backend (server remains authoritative).
+- **Ad mediation (v1.1):** a single ad abstraction fetches `/ads/config` and initializes the **active** network(s) — **AdMob, AppLovin MAX, or Unity Ads** — per placement; rewarded credits only after server verification via `/ads/rewarded/verify`.
+- **Remote config & theme bootstrap (v1.1):** on launch the app fetches `/config`, `/theme`, `/app/version`, and `/app/maintenance` before rendering — applying feature flags, theme, and gating on force-update/maintenance. Values are cached for offline start with a safe fallback theme/config.
+- **Dynamic home & banners (v1.1):** home renders from `/home/layout` + `/banners` using a section/widget registry; unknown section types degrade gracefully (forward-compatible).
+- **Announcements (v1.1):** fetched from `/announcements`, shown once per user, dismissal synced via `/announcements/{id}/seen`.
 
 ### 7.4 App ↔ Backend Contract Rules
 
@@ -718,6 +955,18 @@ Presentation (Widgets + State) → Domain (UseCases + Entities) → Data (Reposi
 - KYC data encrypted at rest where feasible.
 - Account deletion flow (data removal/anonymization).
 - Minimal PII in logs; audit logs retained per policy.
+
+### 8.8 Security for Extended Modules (v1.1)
+
+- **Ad network & payment credentials** — stored **encrypted at rest**, injected via env/secret store, never returned to the client or shown in the admin UI after save (masked, write-only). Only `/ads/config` exposes *public* unit IDs, never secrets.
+- **Rewarded-ad integrity** — client reports completion, but coins are credited only after **server-side verification** (network callback / SSV where supported) with idempotency, closing the fake-reward exploit.
+- **Payment gateway execution** — payouts routed server-side only; `gateway_transactions` carry idempotency keys; webhook/callback signatures verified (same discipline as offerwall postbacks in §8.4).
+- **Remote config / feature flags** — served read-only to clients; only RBAC-authorized admins mutate them; changes audited. Config cannot alter money math (server remains authoritative regardless of flags).
+- **CMS content** — sanitized on save (HTML sanitization) to prevent stored XSS delivered to the app/webviews.
+- **App Version / Maintenance gate** — evaluated server-side; maintenance mode returns a hard gate so no reward/withdraw endpoints process during maintenance.
+- **Database Backup & Restore** — backups stored **off the public web root** and encrypted; download/restore restricted to Super Admin with re-authentication and full audit; restore requires explicit dual-confirmation to prevent accidental data loss. Backups exclude secrets or store them encrypted.
+- **Banners / Home layout / Announcements** — action URLs and deep links validated against an allowlist scheme to prevent open-redirect / malicious deep-link injection.
+- **Theme assets** — uploaded logo/images validated (type/size) and served from safe paths.
 
 ---
 
@@ -953,6 +1202,15 @@ The architecture is built to **outgrow shared hosting gracefully**:
 - Automated DB backups + tested restore.
 - Feature flags for safe rollout.
 - Blue-green / canary deploys once on cloud infrastructure.
+
+### 12.9 Scalability of Extended Modules (v1.1)
+
+- **Server-driven content/config** (banners, home layout, theme, remote config, CMS, announcements, app version) is **read-heavy and cache-friendly** — front with CDN/edge caching and short-TTL response caching, with cache-busting on admin publish. This keeps launch-time fetches cheap even at high DAU.
+- **Ad mediation** — network priority/waterfall lives in DB so new networks are added by config, not code; impression/event logging (`ad_network_events`) is high-volume and should move to the async queue + time-partitioned/archived storage as traffic grows (like `postback_logs`).
+- **Payment gateways** — the gateway abstraction lets new providers be added without touching the Withdraw flow; `gateway_transactions` partitioned/archived by time; execution moved to async workers for retries/backoff at scale.
+- **Database Backup & Restore** — on shared hosting, use scheduled cron `mysqldump`-style exports to off-server/object storage; after cloud migration, switch to managed automated snapshots + point-in-time recovery. Backup files never live in the public web root.
+- **Feature flags as a scaling lever** — Remote Config enables gradual rollout, kill-switches, and A/B testing of new reward mechanics without redeploys, reducing release risk as the user base grows.
+- **Content versioning** — CMS/theme/home-layout versioning supports safe rollback of operator changes independent of app releases.
 
 ---
 
