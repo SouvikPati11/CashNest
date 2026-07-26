@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Core\Routing;
 
+use Core\Contracts\MiddlewareInterface;
+
 /**
  * A single registered route.
  *
@@ -18,7 +20,7 @@ final class Route
     /** @var array<int, string> */
     private array $paramNames = [];
 
-    /** @var array<int, string> */
+    /** @var array<int, class-string<MiddlewareInterface>> */
     private array $middleware = [];
 
     /**
@@ -35,9 +37,9 @@ final class Route
     }
 
     /**
-     * Attach middleware (by container id / class name) to this route.
+     * Attach middleware (by class name) to this route.
      *
-     * @param array<int, string> $middleware
+     * @param array<int, class-string<MiddlewareInterface>> $middleware
      */
     public function middleware(array $middleware): self
     {
@@ -72,6 +74,15 @@ final class Route
         return $params;
     }
 
+    /**
+     * Whether this route's path pattern matches, ignoring the HTTP method.
+     * Used to distinguish 404 (no path) from 405 (path, wrong method).
+     */
+    public function matchesPath(string $path): bool
+    {
+        return preg_match($this->regex, $path) === 1;
+    }
+
     public function method(): string
     {
         return $this->method;
@@ -91,7 +102,7 @@ final class Route
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int, class-string<MiddlewareInterface>>
      */
     public function getMiddleware(): array
     {

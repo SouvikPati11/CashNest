@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Exceptions\MethodNotAllowedException;
 use App\Exceptions\NotFoundException;
 use Core\Container;
 use Core\Http\Request;
@@ -60,12 +61,37 @@ final class RouterTest extends TestCase
         $router->dispatch($this->makeRequest('GET', '/nope'));
     }
 
-    public function testMethodMismatchDoesNotMatch(): void
+    public function testMethodMismatchThrows405(): void
     {
-        $this->expectException(NotFoundException::class);
+        $this->expectException(MethodNotAllowedException::class);
 
         $router = new Router(new Container());
         $router->get('/only-get', static fn(Request $r): Response => Response::json([]));
         $router->dispatch($this->makeRequest('POST', '/only-get'));
+    }
+
+    public function testMethodNotAllowedReportsAllowedMethods(): void
+    {
+        $router = new Router(new Container());
+        $router->get('/res', static fn(Request $r): Response => Response::json([]));
+        $router->post('/res', static fn(Request $r): Response => Response::json([]));
+
+        try {
+            $router->dispatch($this->makeRequest('DELETE', '/res'));
+            self::fail('Expected MethodNotAllowedException.');
+        } catch (MethodNotAllowedException $e) {
+            self::assertEqualsCanonicalizing(['GET', 'POST'], $e->getAllowedMethods());
+        }
+    }
+
+    public function testHeadFallsBackToGetWithEmptyBody(): void
+    {
+        $router = new Router(new Container());
+        $router->get('/page', static fn(Request $r): Response => Response::json(['a' => 1]));
+
+        $response = $router->dispatch($this->makeRequest('HEAD', '/page'));
+
+        self::assertSame(200, $response->status());
+        self::assertSame('', $response->body());
     }
 }

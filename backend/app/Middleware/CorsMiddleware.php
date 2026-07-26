@@ -51,7 +51,8 @@ final class CorsMiddleware implements MiddlewareInterface
             return $origin;
         }
 
-        return $allowed[0] ?? '';
+        // Origin not on the allowlist: emit no Allow-Origin header at all.
+        return '';
     }
 
     private function applyHeaders(Response $response, string $allowOrigin): Response

@@ -12,6 +12,11 @@ namespace App\Models;
  * guarding via `$fillable`, attribute access, and array/JSON serialization with
  * `$hidden` fields removed. Feature models extend this and declare their table,
  * fillable, hidden, and casts.
+ *
+ * Subclasses MUST keep a constructor compatible with `__construct(array $attributes = [])`
+ * so the static factory `fromRow()` can safely instantiate them.
+ *
+ * @phpstan-consistent-constructor
  */
 abstract class BaseModel implements \JsonSerializable
 {

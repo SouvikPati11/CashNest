@@ -59,6 +59,10 @@ final class Handler
             $response = $response->withHeader('Retry-After', (string) $e->getRetryAfter());
         }
 
+        if ($e instanceof MethodNotAllowedException && $e->getAllowedMethods() !== []) {
+            $response = $response->withHeader('Allow', implode(', ', $e->getAllowedMethods()));
+        }
+
         return $response;
     }
 

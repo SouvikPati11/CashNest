@@ -35,6 +35,7 @@ final class Response
      * Build a JSON response, encoding the payload.
      *
      * @param array<string, mixed>|array<int, mixed> $payload
+     * @param array<string, string>                  $headers
      */
     public static function json(array $payload, int $status = 200, array $headers = []): self
     {

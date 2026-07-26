@@ -1,0 +1,14 @@
+parameters:
+    level: 8
+    phpVersion: 80300
+    paths:
+        - core
+        - app
+        - bin
+        - config
+        - routes
+    bootstrapFiles:
+        - vendor/autoload.php
+    treatPhpDocTypesAsCertain: false
+    excludePaths:
+        - vendor

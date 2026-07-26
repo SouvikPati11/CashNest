@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Core\Routing;
 
+use App\Exceptions\MethodNotAllowedException;
 use App\Exceptions\NotFoundException;
 use Core\Contracts\ContainerInterface;
+use Core\Contracts\MiddlewareInterface;
 use Core\Http\Pipeline;
 use Core\Http\Request;
 use Core\Http\Response;
@@ -25,7 +27,7 @@ final class Router
     /** @var array<int, string> Path prefixes for the current group scope. */
     private array $groupPrefix = [];
 
-    /** @var array<int, string> Middleware for the current group scope. */
+    /** @var array<int, class-string<MiddlewareInterface>> Middleware for the current group scope. */
     private array $groupMiddleware = [];
 
     public function __construct(private ContainerInterface $container)
@@ -77,8 +79,8 @@ final class Router
     /**
      * Group routes under a shared prefix and/or middleware.
      *
-     * @param array{prefix?: string, middleware?: array<int, string>} $attributes
-     * @param callable(Router): void                                   $callback
+     * @param array{prefix?: string, middleware?: array<int, class-string<MiddlewareInterface>>} $attributes
+     * @param callable(Router): void $callback
      */
     public function group(array $attributes, callable $callback): void
     {
@@ -135,23 +137,70 @@ final class Router
      */
     public function dispatch(Request $request): Response
     {
+        $method = $request->method();
+        $path   = $request->path();
+
+        // Primary pass: exact method + path match.
         foreach ($this->routes as $route) {
-            $params = $route->match($request->method(), $request->path());
+            $params = $route->match($method, $path);
 
-            if ($params === null) {
-                continue;
+            if ($params !== null) {
+                $request->setRouteParams($params);
+                return $this->runRoute($route, $request);
             }
+        }
 
-            $request->setRouteParams($params);
+        // HEAD falls back to the matching GET route, with the body stripped.
+        if ($method === 'HEAD') {
+            foreach ($this->routes as $route) {
+                $params = $route->match('GET', $path);
 
-            $destination = fn(Request $req): Response => $this->callHandler($route, $req);
+                if ($params !== null) {
+                    $request->setRouteParams($params);
+                    $response = $this->runRoute($route, $request);
+                    return new Response($response->status(), '', $response->headers());
+                }
+            }
+        }
 
-            return (new Pipeline($this->container))
-                ->through($route->getMiddleware())
-                ->run($request, $destination);
+        // Path exists but no method matched -> 405 with an Allow header.
+        $allowed = $this->allowedMethodsFor($path);
+
+        if ($allowed !== []) {
+            throw new MethodNotAllowedException($allowed);
         }
 
         throw new NotFoundException('The requested endpoint does not exist.');
+    }
+
+    /**
+     * Collect the HTTP methods registered for a given path.
+     *
+     * @return array<int, string>
+     */
+    private function allowedMethodsFor(string $path): array
+    {
+        $methods = [];
+
+        foreach ($this->routes as $route) {
+            if ($route->matchesPath($path)) {
+                $methods[] = $route->method();
+            }
+        }
+
+        return array_values(array_unique($methods));
+    }
+
+    /**
+     * Run a matched route through its middleware pipeline to a response.
+     */
+    private function runRoute(Route $route, Request $request): Response
+    {
+        $destination = fn(Request $req): Response => $this->callHandler($route, $req);
+
+        return (new Pipeline($this->container))
+            ->through($route->getMiddleware())
+            ->run($request, $destination);
     }
 
     /**
@@ -170,9 +219,11 @@ final class Router
         $handler = $route->handler();
 
         if (is_array($handler)) {
-            [$class, $method] = $handler;
-            $controller       = $this->container->get($class);
-            $result           = $controller->{$method}($request);
+            [$target, $method] = $handler;
+            // Target may be a class name (resolved from the container) or an
+            // already-instantiated controller object.
+            $controller = is_string($target) ? $this->container->get($target) : $target;
+            $result     = $controller->{$method}($request);
         } else {
             $result = $handler($request);
         }

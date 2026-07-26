@@ -40,7 +40,11 @@ final class Application
 
     private Router $router;
 
-    /** @var array<int, class-string> Global middleware applied to every request. */
+    /**
+     * Global middleware applied to every request.
+     *
+     * @var array<int, class-string<\Core\Contracts\MiddlewareInterface>>
+     */
     private array $globalMiddleware = [
         \App\Middleware\CorsMiddleware::class,
         \App\Middleware\RateLimitMiddleware::class,

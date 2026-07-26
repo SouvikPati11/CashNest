@@ -68,4 +68,16 @@ final class FileCacheTest extends TestCase
 
         self::assertFalse($this->cache->has('gone'));
     }
+
+    public function testGcRemovesOnlyExpiredFiles(): void
+    {
+        $this->cache->put('live', 'a', 60);
+        $this->cache->put('dead', 'b', -1); // already expired
+
+        $removed = $this->cache->gc();
+
+        self::assertSame(1, $removed);
+        self::assertTrue($this->cache->has('live'));
+        self::assertCount(1, glob($this->dir . '/*.cache') ?: []);
+    }
 }

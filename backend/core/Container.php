@@ -85,11 +85,9 @@ final class Container implements ContainerInterface
      */
     private function build(string $class): object
     {
-        try {
-            $reflector = new \ReflectionClass($class);
-        } catch (\ReflectionException $e) {
-            throw new ContainerException(sprintf('Unable to reflect class "%s".', $class), 0, $e);
-        }
+        // $class is a verified class-string (callers guard with class_exists),
+        // so ReflectionClass never throws here.
+        $reflector = new \ReflectionClass($class);
 
         if (!$reflector->isInstantiable()) {
             throw new ContainerException(sprintf('Class "%s" is not instantiable.', $class));

@@ -94,12 +94,17 @@ Register a per-minute cron pointing at the worker:
 * * * * * /usr/bin/php /path/to/backend/bin/cron.php >> /dev/null 2>&1
 ```
 
-## Testing
+## Testing & quality gates
 
 ```bash
 composer test        # PHPUnit
 composer lint        # PSR-12 (phpcs)
+composer stan        # Static analysis (PHPStan, level 8)
+composer check       # lint + stan + test
 ```
+
+Quality bar for this milestone: **PSR-12 clean**, **PHPStan level 8 clean**,
+and **all tests green** (unit + feature).
 
 ## Not included yet (by design)
 

@@ -111,7 +111,10 @@ final class Database
     {
         $this->run($sql, $bindings);
 
-        return $this->pdo()->lastInsertId();
+        $id = $this->pdo()->lastInsertId();
+
+        // lastInsertId() returns false for tables without an auto-increment key.
+        return $id === false ? '0' : $id;
     }
 
     /**

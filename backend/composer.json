@@ -12,6 +12,7 @@
         "firebase/php-jwt": "^6.10"
     },
     "require-dev": {
+        "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
         "squizlabs/php_codesniffer": "^3.10"
     },
@@ -33,7 +34,13 @@
     "scripts": {
         "test": "phpunit",
         "lint": "phpcs --standard=PSR12 core app",
-        "lint:fix": "phpcbf --standard=PSR12 core app"
+        "lint:fix": "phpcbf --standard=PSR12 core app",
+        "stan": "phpstan analyse -c phpstan.neon",
+        "check": [
+            "@lint",
+            "@stan",
+            "@test"
+        ]
     },
     "config": {
         "optimize-autoloader": true,

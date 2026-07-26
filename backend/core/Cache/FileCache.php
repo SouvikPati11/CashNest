@@ -16,6 +16,9 @@ use Core\Contracts\CacheInterface;
  */
 final class FileCache implements CacheInterface
 {
+    /** 1-in-N chance that a write triggers a garbage-collection sweep. */
+    private const GC_DIVISOR = 100;
+
     public function __construct(private string $directory)
     {
         if (!is_dir($this->directory)) {
@@ -37,7 +40,46 @@ final class FileCache implements CacheInterface
 
         $payload = serialize(['expires' => $expires, 'value' => $value]);
 
-        return @file_put_contents($this->path($key), $payload, LOCK_EX) !== false;
+        $written = @file_put_contents($this->path($key), $payload, LOCK_EX) !== false;
+
+        // Probabilistically sweep expired files so short-TTL keys (e.g. rate-limit
+        // counters) never accumulate unbounded on shared hosting.
+        if ($written && random_int(1, self::GC_DIVISOR) === 1) {
+            $this->gc();
+        }
+
+        return $written;
+    }
+
+    /**
+     * Remove expired cache files. Cheap best-effort sweep, invoked probabilistically.
+     */
+    public function gc(): int
+    {
+        $now     = time();
+        $removed = 0;
+
+        foreach (glob($this->directory . '/*.cache') ?: [] as $file) {
+            $contents = @file_get_contents($file);
+
+            if ($contents === false || $contents === '') {
+                continue;
+            }
+
+            $entry = @unserialize($contents);
+
+            if (!is_array($entry) || !array_key_exists('expires', $entry)) {
+                continue;
+            }
+
+            $expires = (int) $entry['expires'];
+
+            if ($expires !== 0 && $expires <= $now && @unlink($file)) {
+                $removed++;
+            }
+        }
+
+        return $removed;
     }
 
     public function add(string $key, mixed $value, int $ttlSeconds = 0): bool
@@ -135,12 +177,14 @@ final class FileCache implements CacheInterface
             return null;
         }
 
-        if ($entry['expires'] !== 0 && $entry['expires'] <= time()) {
+        $expires = (int) $entry['expires'];
+
+        if ($expires !== 0 && $expires <= time()) {
             @unlink($path);
             return null;
         }
 
-        return $entry;
+        return ['expires' => $expires, 'value' => $entry['value'] ?? null];
     }
 
     /**
