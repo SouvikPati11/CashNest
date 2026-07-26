@@ -17,6 +17,7 @@
 declare(strict_types=1);
 
 use App\Jobs\JobInterface;
+use App\Jobs\SendPushNotificationJob;
 use Core\Application;
 use Core\Console\QueueWorker;
 use Core\Contracts\ContainerInterface;
@@ -51,12 +52,14 @@ $logger = $container->get(LoggerInterface::class);
 |--------------------------------------------------------------------------
 | Job registry
 |--------------------------------------------------------------------------
-| Map queue job names to their handler classes here as modules are built.
-| Each handler must implement App\Jobs\JobInterface.
+| Maps queue job names to their handler classes. Each handler implements
+| App\Jobs\JobInterface and is resolved from the container by the worker.
 |
 | @var array<string, class-string<JobInterface>> $registry
 */
-$registry = [];
+$registry = [
+    SendPushNotificationJob::NAME => SendPushNotificationJob::class,
+];
 
 /** @var QueueInterface $queue */
 $queue = $container->get(QueueInterface::class);

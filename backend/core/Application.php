@@ -68,6 +68,7 @@ final class Application
         $app->configureRuntime();
         $app->container = new Container();
         $app->registerCoreBindings();
+        $app->registerProviders();
         $app->registerRoutes();
 
         return $app;
@@ -226,13 +227,54 @@ final class Application
     }
 
     /**
-     * Load route definitions from the routes directory.
+     * Register every module service provider.
+     *
+     * Bindings are lazy (closures), so registration order is not significant;
+     * each provider resolves its dependencies on first use. Reuses the container
+     * built in registerCoreBindings().
+     */
+    private function registerProviders(): void
+    {
+        \App\Providers\AuthServiceProvider::register($this->container);
+        \App\Providers\AuthHttpServiceProvider::register($this->container);
+        \App\Providers\AuthTokenServiceProvider::register($this->container);
+        \App\Providers\WalletServiceProvider::register($this->container);
+        \App\Providers\RewardsServiceProvider::register($this->container);
+        \App\Providers\ReferralServiceProvider::register($this->container);
+        \App\Providers\OfferwallServiceProvider::register($this->container);
+        \App\Providers\WithdrawServiceProvider::register($this->container);
+        \App\Providers\NotificationServiceProvider::register($this->container);
+        \App\Providers\SettingsPlatformServiceProvider::register($this->container);
+        \App\Providers\AdminServiceProvider::register($this->container);
+    }
+
+    /**
+     * Load every route definition file into the router.
+     *
+     * All modules register here: JSON API (auth, wallet, rewards, offerwall,
+     * referral, withdraw, notifications, settings platform), the signed postback
+     * endpoints, and the session-authenticated admin panel.
      */
     private function registerRoutes(): void
     {
         $router = $this->router;
 
-        foreach (['api.php', 'postback.php'] as $file) {
+        $files = [
+            'api.php',
+            'auth.php',
+            'auth_session.php',
+            'wallet.php',
+            'rewards.php',
+            'referral.php',
+            'offerwall.php',
+            'withdraw.php',
+            'notification.php',
+            'settings_platform.php',
+            'postback.php',
+            'admin.php',
+        ];
+
+        foreach ($files as $file) {
             $path = $this->basePath . '/routes/' . $file;
 
             if (is_file($path)) {
