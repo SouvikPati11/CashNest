@@ -19,6 +19,9 @@ dependencies:
   # Navigation
   go_router: ^14.2.7
 
+  # Authentication
+  google_sign_in: ^6.2.1
+
   # Networking
   dio: ^5.7.0
 
