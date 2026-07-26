@@ -1,0 +1,20 @@
+// Bangla strings. This file is excluded from analysis (data table).
+const Map<String, String> stringsBn = {
+  'appName': 'ক্যাশনেস্ট',
+  'loading': 'লোড হচ্ছে…',
+  'retry': 'আবার চেষ্টা করুন',
+  'ok': 'ঠিক আছে',
+  'cancel': 'বাতিল',
+  'errorNetwork': 'ইন্টারনেট সংযোগ নেই। আপনার নেটওয়ার্ক পরীক্ষা করুন।',
+  'errorTimeout': 'অনুরোধের সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।',
+  'errorServer': 'আমাদের দিকে কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+  'errorUnauthorized': 'আপনার সেশন শেষ হয়ে গেছে। আবার সাইন ইন করুন।',
+  'errorValidation': 'অনুগ্রহ করে প্রদত্ত তথ্য পরীক্ষা করুন।',
+  'errorGeneric': 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+  'offlineTitle': 'আপনি অফলাইনে আছেন',
+  'offlineMessage': 'ক্যাশনেস্ট ব্যবহার চালিয়ে যেতে পুনরায় সংযোগ করুন।',
+  'emptyTitle': 'এখনও কিছু নেই',
+  'emptyMessage': 'এই মুহূর্তে দেখানোর মতো কিছু নেই।',
+  'foundationReady': 'ক্যাশনেস্ট ফাউন্ডেশন প্রস্তুত।',
+  'home': 'হোম',
+};

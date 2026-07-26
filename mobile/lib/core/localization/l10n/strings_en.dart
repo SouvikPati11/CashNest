@@ -1,0 +1,20 @@
+// English strings. This file is excluded from analysis (data table).
+const Map<String, String> stringsEn = {
+  'appName': 'CashNest',
+  'loading': 'Loading…',
+  'retry': 'Retry',
+  'ok': 'OK',
+  'cancel': 'Cancel',
+  'errorNetwork': 'No internet connection. Please check your network.',
+  'errorTimeout': 'The request timed out. Please try again.',
+  'errorServer': 'Something went wrong on our side. Please try again.',
+  'errorUnauthorized': 'Your session has expired. Please sign in again.',
+  'errorValidation': 'Please check the information you entered.',
+  'errorGeneric': 'Something went wrong. Please try again.',
+  'offlineTitle': 'You are offline',
+  'offlineMessage': 'Reconnect to continue using CashNest.',
+  'emptyTitle': 'Nothing here yet',
+  'emptyMessage': 'There is nothing to show right now.',
+  'foundationReady': 'CashNest foundation is ready.',
+  'home': 'Home',
+};
