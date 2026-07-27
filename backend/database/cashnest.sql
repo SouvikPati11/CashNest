@@ -6,12 +6,15 @@
 -- Contents:
 --   1. Session setup (charset, SQL mode, UTC, FK checks off during create)
 --   2. Schema — all CREATE TABLE statements (sections A–M), with indexes,
---      foreign keys, unique constraints, and key CHECK constraints.
+--      foreign keys, and unique constraints. (No table CHECK constraints are
+--      used, for maximum MySQL/MariaDB portability — those invariants are
+--      enforced in the application layer.)
 --   3. Seed data — RBAC roles/permissions, a default super-admin account,
 --      currency/reward/withdraw/gateway config, content, and app config.
 --
 -- Conventions (per design doc §0):
---   * Engine InnoDB, utf8mb4 / utf8mb4_0900_ai_ci, ROW_FORMAT=DYNAMIC.
+--   * Engine InnoDB, utf8mb4 / utf8mb4_unicode_ci, ROW_FORMAT=DYNAMIC
+--     (utf8mb4_unicode_ci is supported by all MySQL 5.7+/8 and MariaDB 10.x).
 --   * All datetimes are UTC; conversion happens at the app layer.
 --   * Coins  : BIGINT (balances UNSIGNED). Cash : DECIMAL(18,4).
 --     Rate   : DECIMAL(18,8). Percent : DECIMAL(6,4) (0.1000 = 10%).
@@ -63,7 +66,7 @@ CREATE TABLE `users` (
   KEY `idx_users_created_at` (`created_at`),
   KEY `idx_users_country` (`country_code`),
   CONSTRAINT `fk_users_referred_by` FOREIGN KEY (`referred_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- A.2 user_auth_providers ------------------------------------------------------
 CREATE TABLE `user_auth_providers` (
@@ -82,7 +85,7 @@ CREATE TABLE `user_auth_providers` (
   UNIQUE KEY `uq_uap_user_provider` (`user_id`, `provider`),
   KEY `idx_uap_user` (`user_id`),
   CONSTRAINT `fk_uap_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- A.3 user_devices -------------------------------------------------------------
 CREATE TABLE `user_devices` (
@@ -109,7 +112,7 @@ CREATE TABLE `user_devices` (
   KEY `idx_ud_fingerprint` (`fingerprint_hash`),
   KEY `idx_ud_last_seen` (`last_seen_at`),
   CONSTRAINT `fk_ud_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- A.4 user_sessions ------------------------------------------------------------
 CREATE TABLE `user_sessions` (
@@ -132,7 +135,7 @@ CREATE TABLE `user_sessions` (
   KEY `idx_us_device` (`device_id`),
   CONSTRAINT `fk_us_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_us_device` FOREIGN KEY (`device_id`) REFERENCES `user_devices` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- A.5 user_kyc -----------------------------------------------------------------
 CREATE TABLE `user_kyc` (
@@ -154,7 +157,7 @@ CREATE TABLE `user_kyc` (
   KEY `idx_kyc_reviewed_by` (`reviewed_by`),
   CONSTRAINT `fk_kyc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_kyc_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- A.6 user_settings ------------------------------------------------------------
 CREATE TABLE `user_settings` (
@@ -170,7 +173,7 @@ CREATE TABLE `user_settings` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_usettings_user` (`user_id`),
   CONSTRAINT `fk_usettings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- B. WALLET & CURRENCY  (the financial core)
@@ -195,7 +198,7 @@ CREATE TABLE `wallets` (
   KEY `idx_wallets_last_txn` (`last_transaction_id`),
   CONSTRAINT `fk_wallets_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_wallets_last_txn` FOREIGN KEY (`last_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- B.2 wallet_transactions (immutable ledger) ----------------------------------
 CREATE TABLE `wallet_transactions` (
@@ -226,12 +229,13 @@ CREATE TABLE `wallet_transactions` (
   KEY `idx_wt_related` (`related_transaction_id`),
   KEY `idx_wt_created` (`created_at`),
   KEY `idx_wt_admin` (`performed_by_admin_id`),
-  CONSTRAINT `chk_wt_amount_positive` CHECK (`amount` > 0),
+  -- `amount` is BIGINT UNSIGNED (>= 0); the strict `amount > 0` invariant is
+  -- enforced in the application layer. A table CHECK is omitted for portability.
   CONSTRAINT `fk_wt_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_wt_wallet` FOREIGN KEY (`wallet_id`) REFERENCES `wallets` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_wt_related` FOREIGN KEY (`related_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_wt_admin` FOREIGN KEY (`performed_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- B.3 currency_settings --------------------------------------------------------
 CREATE TABLE `currency_settings` (
@@ -247,7 +251,7 @@ CREATE TABLE `currency_settings` (
   `updated_at`           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_cs_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- C. REWARD MECHANICS
@@ -268,7 +272,7 @@ CREATE TABLE `daily_checkins` (
   KEY `idx_dc_transaction` (`transaction_id`),
   CONSTRAINT `fk_dc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_dc_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.2 checkin_rewards_config ---------------------------------------------------
 CREATE TABLE `checkin_rewards_config` (
@@ -282,7 +286,7 @@ CREATE TABLE `checkin_rewards_config` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_crc_day` (`day_number`),
   KEY `idx_crc_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.3 scratch_cards ------------------------------------------------------------
 CREATE TABLE `scratch_cards` (
@@ -303,7 +307,7 @@ CREATE TABLE `scratch_cards` (
   KEY `idx_sc_transaction` (`transaction_id`),
   CONSTRAINT `fk_sc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_sc_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.4 scratch_card_config ------------------------------------------------------
 CREATE TABLE `scratch_card_config` (
@@ -317,7 +321,7 @@ CREATE TABLE `scratch_card_config` (
   `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_scc_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.5 spin_wheel_segments ------------------------------------------------------
 CREATE TABLE `spin_wheel_segments` (
@@ -334,7 +338,7 @@ CREATE TABLE `spin_wheel_segments` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_sws_position` (`position`),
   KEY `idx_sws_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.6 spin_history -------------------------------------------------------------
 CREATE TABLE `spin_history` (
@@ -353,7 +357,7 @@ CREATE TABLE `spin_history` (
   CONSTRAINT `fk_sh_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_sh_segment` FOREIGN KEY (`segment_id`) REFERENCES `spin_wheel_segments` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_sh_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.7 tasks --------------------------------------------------------------------
 CREATE TABLE `tasks` (
@@ -377,7 +381,7 @@ CREATE TABLE `tasks` (
   KEY `idx_tasks_active_window` (`is_active`, `starts_at`, `ends_at`),
   KEY `idx_tasks_type` (`task_type`),
   KEY `idx_tasks_sort` (`sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- C.8 task_completions ---------------------------------------------------------
 CREATE TABLE `task_completions` (
@@ -404,7 +408,7 @@ CREATE TABLE `task_completions` (
   CONSTRAINT `fk_tc_task` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_tc_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tc_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- D. OFFERWALL & CPA
@@ -427,7 +431,7 @@ CREATE TABLE `offerwall_providers` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_op_slug` (`slug`),
   KEY `idx_op_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- D.2 offers -------------------------------------------------------------------
 CREATE TABLE `offers` (
@@ -453,7 +457,7 @@ CREATE TABLE `offers` (
   KEY `idx_offers_active` (`is_active`),
   KEY `idx_offers_category` (`category`),
   CONSTRAINT `fk_offers_provider` FOREIGN KEY (`provider_id`) REFERENCES `offerwall_providers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- D.3 offer_clicks -------------------------------------------------------------
 CREATE TABLE `offer_clicks` (
@@ -476,7 +480,7 @@ CREATE TABLE `offer_clicks` (
   CONSTRAINT `fk_oc_offer` FOREIGN KEY (`offer_id`) REFERENCES `offers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_oc_provider` FOREIGN KEY (`provider_id`) REFERENCES `offerwall_providers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_oc_device` FOREIGN KEY (`device_id`) REFERENCES `user_devices` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- D.4 offer_conversions --------------------------------------------------------
 CREATE TABLE `offer_conversions` (
@@ -507,7 +511,7 @@ CREATE TABLE `offer_conversions` (
   CONSTRAINT `fk_ocv_offer` FOREIGN KEY (`offer_id`) REFERENCES `offers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_ocv_click` FOREIGN KEY (`click_id`) REFERENCES `offer_clicks` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_ocv_wallet_txn` FOREIGN KEY (`wallet_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- D.5 cpa_offers ---------------------------------------------------------------
 CREATE TABLE `cpa_offers` (
@@ -528,7 +532,7 @@ CREATE TABLE `cpa_offers` (
   KEY `idx_cpa_provider` (`provider_id`),
   KEY `idx_cpa_active` (`is_active`),
   CONSTRAINT `fk_cpa_provider` FOREIGN KEY (`provider_id`) REFERENCES `offerwall_providers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- D.6 postback_logs ------------------------------------------------------------
 CREATE TABLE `postback_logs` (
@@ -551,7 +555,7 @@ CREATE TABLE `postback_logs` (
   KEY `idx_pl_conversion` (`conversion_id`),
   CONSTRAINT `fk_pl_provider` FOREIGN KEY (`provider_id`) REFERENCES `offerwall_providers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_pl_conversion` FOREIGN KEY (`conversion_id`) REFERENCES `offer_conversions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- E. REFERRAL
@@ -577,12 +581,13 @@ CREATE TABLE `referrals` (
   UNIQUE KEY `uq_ref_referee` (`referee_id`),
   KEY `idx_ref_referrer` (`referrer_id`),
   KEY `idx_ref_status` (`status`),
-  CONSTRAINT `chk_ref_no_self` CHECK (`referrer_id` <> `referee_id`),
+  -- Invariant `referrer_id <> referee_id` (no self-referral) is enforced in the
+  -- application layer; a table CHECK is omitted for MySQL/MariaDB portability.
   CONSTRAINT `fk_ref_referrer` FOREIGN KEY (`referrer_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_ref_referee` FOREIGN KEY (`referee_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_ref_referrer_txn` FOREIGN KEY (`referrer_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_ref_referee_txn` FOREIGN KEY (`referee_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- E.2 referral_config ----------------------------------------------------------
 CREATE TABLE `referral_config` (
@@ -598,7 +603,7 @@ CREATE TABLE `referral_config` (
   `updated_at`               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_rc_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- E.3 referral_earnings --------------------------------------------------------
 CREATE TABLE `referral_earnings` (
@@ -621,7 +626,7 @@ CREATE TABLE `referral_earnings` (
   CONSTRAINT `fk_re_referee` FOREIGN KEY (`referee_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_re_source_txn` FOREIGN KEY (`source_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_re_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- F. LEADERBOARD
@@ -641,7 +646,7 @@ CREATE TABLE `leaderboard_periods` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_lp_type_key` (`period_type`, `period_key`),
   KEY `idx_lp_type_status` (`period_type`, `status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- F.2 leaderboard_entries ------------------------------------------------------
 CREATE TABLE `leaderboard_entries` (
@@ -661,7 +666,7 @@ CREATE TABLE `leaderboard_entries` (
   KEY `idx_le_user` (`user_id`),
   CONSTRAINT `fk_le_period` FOREIGN KEY (`period_id`) REFERENCES `leaderboard_periods` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_le_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- G. WITHDRAWALS
@@ -688,7 +693,7 @@ CREATE TABLE `withdraw_methods` (
   KEY `idx_wm_active` (`is_active`),
   KEY `idx_wm_gateway` (`gateway_id`),
   CONSTRAINT `fk_wm_gateway` FOREIGN KEY (`gateway_id`) REFERENCES `payment_gateways` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- G.2 withdraw_requests --------------------------------------------------------
 CREATE TABLE `withdraw_requests` (
@@ -730,7 +735,7 @@ CREATE TABLE `withdraw_requests` (
   CONSTRAINT `fk_wr_debit_txn` FOREIGN KEY (`debit_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_wr_refund_txn` FOREIGN KEY (`refund_transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_wr_admin` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- G.3 withdraw_history ---------------------------------------------------------
 CREATE TABLE `withdraw_history` (
@@ -747,7 +752,7 @@ CREATE TABLE `withdraw_history` (
   KEY `idx_wh_admin` (`changed_by_admin_id`),
   CONSTRAINT `fk_wh_request` FOREIGN KEY (`withdraw_request_id`) REFERENCES `withdraw_requests` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wh_admin` FOREIGN KEY (`changed_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- H. ENGAGEMENT & SYSTEM
@@ -774,7 +779,7 @@ CREATE TABLE `notifications` (
   KEY `idx_notif_created` (`created_at`),
   CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_notif_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `notification_campaigns` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- H.2 notification_campaigns ---------------------------------------------------
 CREATE TABLE `notification_campaigns` (
@@ -798,7 +803,7 @@ CREATE TABLE `notification_campaigns` (
   KEY `idx_nc_status_scheduled` (`status`, `scheduled_at`),
   KEY `idx_nc_created_by` (`created_by`),
   CONSTRAINT `fk_nc_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- H.3 support_tickets ----------------------------------------------------------
 CREATE TABLE `support_tickets` (
@@ -820,7 +825,7 @@ CREATE TABLE `support_tickets` (
   KEY `idx_st_assigned` (`assigned_admin_id`),
   CONSTRAINT `fk_st_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_st_assigned` FOREIGN KEY (`assigned_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- H.4 support_messages ---------------------------------------------------------
 CREATE TABLE `support_messages` (
@@ -839,7 +844,7 @@ CREATE TABLE `support_messages` (
   CONSTRAINT `fk_sm_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `support_tickets` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_sm_sender_user` FOREIGN KEY (`sender_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_sm_sender_admin` FOREIGN KEY (`sender_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- H.5 faqs ---------------------------------------------------------------------
 CREATE TABLE `faqs` (
@@ -856,7 +861,7 @@ CREATE TABLE `faqs` (
   KEY `idx_faq_category` (`category_id`),
   KEY `idx_faq_published_sort` (`is_published`, `sort_order`),
   CONSTRAINT `fk_faq_category` FOREIGN KEY (`category_id`) REFERENCES `faq_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- H.6 faq_categories -----------------------------------------------------------
 CREATE TABLE `faq_categories` (
@@ -870,7 +875,7 @@ CREATE TABLE `faq_categories` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_fc_slug` (`slug`),
   KEY `idx_fc_active_sort` (`is_active`, `sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- H.7 app_settings -------------------------------------------------------------
 CREATE TABLE `app_settings` (
@@ -886,7 +891,7 @@ CREATE TABLE `app_settings` (
   UNIQUE KEY `uq_as_key` (`setting_key`),
   KEY `idx_as_group` (`group_name`),
   KEY `idx_as_public` (`is_public`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- I. ADMIN & GOVERNANCE
@@ -903,7 +908,7 @@ CREATE TABLE `admin_roles` (
   `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_ar_slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- I.1 admins -------------------------------------------------------------------
 CREATE TABLE `admins` (
@@ -925,7 +930,7 @@ CREATE TABLE `admins` (
   KEY `idx_admins_role` (`role_id`),
   KEY `idx_admins_status` (`status`),
   CONSTRAINT `fk_admins_role` FOREIGN KEY (`role_id`) REFERENCES `admin_roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- I.3 admin_permissions --------------------------------------------------------
 CREATE TABLE `admin_permissions` (
@@ -938,7 +943,7 @@ CREATE TABLE `admin_permissions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_ap_slug` (`slug`),
   KEY `idx_ap_module` (`module`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- I.4 admin_role_permissions (junction) ----------------------------------------
 CREATE TABLE `admin_role_permissions` (
@@ -949,7 +954,7 @@ CREATE TABLE `admin_role_permissions` (
   KEY `idx_arp_permission` (`permission_id`),
   CONSTRAINT `fk_arp_role` FOREIGN KEY (`role_id`) REFERENCES `admin_roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_arp_permission` FOREIGN KEY (`permission_id`) REFERENCES `admin_permissions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- I.5 admin_audit_logs ---------------------------------------------------------
 CREATE TABLE `admin_audit_logs` (
@@ -969,7 +974,7 @@ CREATE TABLE `admin_audit_logs` (
   KEY `idx_aal_action` (`action`),
   KEY `idx_aal_created` (`created_at`),
   CONSTRAINT `fk_aal_admin` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- I.6 fraud_flags --------------------------------------------------------------
 CREATE TABLE `fraud_flags` (
@@ -994,7 +999,7 @@ CREATE TABLE `fraud_flags` (
   KEY `idx_ff_reviewed_by` (`reviewed_by`),
   CONSTRAINT `fk_ff_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_ff_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- J. ADS (MULTI-NETWORK MANAGEMENT)
@@ -1015,7 +1020,7 @@ CREATE TABLE `ads_placements` (
   UNIQUE KEY `uq_apl_code` (`code`),
   KEY `idx_apl_active` (`is_active`),
   KEY `idx_apl_format` (`ad_format`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- J.2 ad_networks --------------------------------------------------------------
 CREATE TABLE `ad_networks` (
@@ -1032,7 +1037,7 @@ CREATE TABLE `ad_networks` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_an_network` (`network`),
   KEY `idx_an_enabled_priority` (`is_enabled`, `priority`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- J.3 ad_units -----------------------------------------------------------------
 CREATE TABLE `ad_units` (
@@ -1054,7 +1059,7 @@ CREATE TABLE `ad_units` (
   KEY `idx_au_country` (`country_code`),
   CONSTRAINT `fk_au_network` FOREIGN KEY (`network_id`) REFERENCES `ad_networks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_au_placement` FOREIGN KEY (`placement_id`) REFERENCES `ads_placements` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- J.4 ad_network_events --------------------------------------------------------
 CREATE TABLE `ad_network_events` (
@@ -1083,7 +1088,7 @@ CREATE TABLE `ad_network_events` (
   CONSTRAINT `fk_ane_placement` FOREIGN KEY (`placement_id`) REFERENCES `ads_placements` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_ane_unit` FOREIGN KEY (`unit_id`) REFERENCES `ad_units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_ane_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `wallet_transactions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- K. PAYMENTS
@@ -1110,7 +1115,7 @@ CREATE TABLE `payment_gateways` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_pg_code` (`code`),
   KEY `idx_pg_enabled_priority` (`is_enabled`, `priority`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- K.2 gateway_transactions -----------------------------------------------------
 CREATE TABLE `gateway_transactions` (
@@ -1138,7 +1143,7 @@ CREATE TABLE `gateway_transactions` (
   KEY `idx_gt_created` (`created_at`),
   CONSTRAINT `fk_gt_gateway` FOREIGN KEY (`gateway_id`) REFERENCES `payment_gateways` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_gt_request` FOREIGN KEY (`withdraw_request_id`) REFERENCES `withdraw_requests` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- L. CONTENT & CONFIG (SERVER-DRIVEN)
@@ -1165,7 +1170,7 @@ CREATE TABLE `banners` (
   KEY `idx_ban_placement_sort` (`placement`, `sort_order`),
   KEY `idx_ban_created_by` (`created_by`),
   CONSTRAINT `fk_ban_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.2 announcements ------------------------------------------------------------
 CREATE TABLE `announcements` (
@@ -1189,7 +1194,7 @@ CREATE TABLE `announcements` (
   KEY `idx_ann_priority` (`priority`),
   KEY `idx_ann_created_by` (`created_by`),
   CONSTRAINT `fk_ann_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.3 announcement_reads -------------------------------------------------------
 CREATE TABLE `announcement_reads` (
@@ -1202,7 +1207,7 @@ CREATE TABLE `announcement_reads` (
   KEY `idx_anr_user` (`user_id`),
   CONSTRAINT `fk_anr_announcement` FOREIGN KEY (`announcement_id`) REFERENCES `announcements` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_anr_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.4 app_versions -------------------------------------------------------------
 CREATE TABLE `app_versions` (
@@ -1219,7 +1224,7 @@ CREATE TABLE `app_versions` (
   `updated_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_av_platform_active` (`platform`, `is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.5 maintenance_windows ------------------------------------------------------
 CREATE TABLE `maintenance_windows` (
@@ -1237,7 +1242,7 @@ CREATE TABLE `maintenance_windows` (
   KEY `idx_mw_enabled` (`is_enabled`),
   KEY `idx_mw_created_by` (`created_by`),
   CONSTRAINT `fk_mw_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.6 remote_configs -----------------------------------------------------------
 CREATE TABLE `remote_configs` (
@@ -1258,7 +1263,7 @@ CREATE TABLE `remote_configs` (
   KEY `idx_rc_env` (`environment`),
   KEY `idx_rc_updated_by` (`updated_by`),
   CONSTRAINT `fk_rc_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.7 cms_pages ----------------------------------------------------------------
 CREATE TABLE `cms_pages` (
@@ -1278,7 +1283,7 @@ CREATE TABLE `cms_pages` (
   KEY `idx_cms_published` (`is_published`),
   KEY `idx_cms_updated_by` (`updated_by`),
   CONSTRAINT `fk_cms_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.8 home_sections ------------------------------------------------------------
 CREATE TABLE `home_sections` (
@@ -1298,7 +1303,7 @@ CREATE TABLE `home_sections` (
   KEY `idx_hs_active_sort` (`is_active`, `sort_order`),
   KEY `idx_hs_created_by` (`created_by`),
   CONSTRAINT `fk_hs_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- L.9 themes -------------------------------------------------------------------
 CREATE TABLE `themes` (
@@ -1321,7 +1326,7 @@ CREATE TABLE `themes` (
   KEY `idx_themes_active` (`is_active`),
   KEY `idx_themes_created_by` (`created_by`),
   CONSTRAINT `fk_themes_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- =============================================================================
 -- M. OPERATIONS
@@ -1348,7 +1353,7 @@ CREATE TABLE `backup_jobs` (
   KEY `idx_bj_created` (`created_at`),
   KEY `idx_bj_created_by` (`created_by`),
   CONSTRAINT `fk_bj_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- M.2 restore_logs -------------------------------------------------------------
 CREATE TABLE `restore_logs` (
@@ -1368,7 +1373,7 @@ CREATE TABLE `restore_logs` (
   KEY `idx_rl_performed_by` (`performed_by`),
   CONSTRAINT `fk_rl_backup` FOREIGN KEY (`backup_job_id`) REFERENCES `backup_jobs` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_rl_performed_by` FOREIGN KEY (`performed_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;
 
