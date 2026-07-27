@@ -1,38 +1,28 @@
 # ---------------------------------------------------------------------------
-# CashNest API — project-root .htaccess (defense in depth)
+# CashNest API — project-root .htaccess  (LiteSpeed / Apache safe, minimal)
 #
-# Behaviour by layout:
-#   * Document root points at public/            -> this file is never hit
-#     (recommended: set the domain's document root to .../backend/public).
-#   * Document root points at the project root   -> forwards traffic into
-#     public/ transparently.
-#   * App lives in a SUBDIRECTORY of the docroot (e.g. public_html/backend/,
-#     reached at /backend/public/...) -> the !/public/ guard stops the rewrite
-#     from firing once the path already contains /public/, so it never
-#     double-prepends "public/" (the previous rewrite loop that produced
-#     ERR_HTTP2_PROTOCOL_ERROR on LiteSpeed).
+# Every directive is wrapped in <IfModule> so an unavailable AllowOverride
+# class can never make the server reject the file with HTTP 500.
 #
-# The framework also strips its own base directory from the request path, so
-# routes resolve correctly whichever of the above applies.
+# Layout behaviour:
+#   * docroot = public/            -> this file is never read.
+#   * docroot = project root       -> forwards traffic into public/.
+#   * app in a subdirectory of the docroot (e.g. public_html/backend/, reached
+#     at /backend/public/...)      -> the !/public/ guard stops the rewrite
+#     from double-prepending "public/", so there is no rewrite loop.
 # ---------------------------------------------------------------------------
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Deny direct HTTP access to framework internals. The pattern is anchored at
-    # the start of the per-directory path, so it blocks /core, /app, /vendor,
-    # etc. as top-level segments WITHOUT affecting API routes such as
-    # /public/v1/app/version (which start with "public/").
+    # Deny direct access to framework internals (top-level segments only, so it
+    # never clashes with API routes such as /public/v1/app/version).
     RewriteRule ^(\.env|\.env\..*|composer\.(json|lock)|core|app|config|routes|storage|database|tests|vendor)(/|$) - [F,L]
 
-    # Forward everything else into public/ — but only when the request is not
-    # already inside a public/ segment and is not a real file/directory here.
+    # Forward into public/ unless the path is already inside public/ or is a
+    # real file/directory here.
     RewriteCond %{REQUEST_URI} !/public/
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
-
-# Non-rewrite fallback: .env and composer files never appear in API routes, so
-# they are safe to block outright at any depth.
-RedirectMatch 403 (^|/)(\.env|\.env\..*|composer\.(json|lock))(/|$)

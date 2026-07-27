@@ -1,36 +1,30 @@
 # ---------------------------------------------------------------------------
-# CashNest API — public/.htaccess
-# Routes all non-file requests to the front controller and adds baseline
-# security headers. Tuned for Apache on shared hosting.
+# CashNest API — public/.htaccess  (LiteSpeed / Apache safe, minimal)
+#
+# IMPORTANT: every directive here is wrapped in <IfModule>. Unguarded
+# directives such as `Options`, `DirectoryIndex`, or `Require` require a
+# matching AllowOverride class; on hosts where that class is not granted they
+# make the web server reject the ENTIRE .htaccess with HTTP 500 — for every
+# request, even a plain `<?php echo "Hello";`. Keeping everything inside
+# <IfModule> guards avoids that failure mode.
 # ---------------------------------------------------------------------------
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Handle Authorization header (some CGI/FastCGI setups strip it).
+    # Preserve the Authorization header for Bearer tokens (LSAPI/CGI can strip it).
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # If the request is not a real file or directory, send it to index.php.
+    # Front controller: route anything that is not a real file/dir to index.php.
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# Disable directory listing.
-Options -Indexes
-
-# Baseline security headers.
+# Security headers are safe: if mod_headers is absent the block is skipped.
 <IfModule mod_headers.c>
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set X-Frame-Options "DENY"
-    Header always set Referrer-Policy "no-referrer"
-    Header always set X-XSS-Protection "0"
-    # HSTS is safe only when served exclusively over HTTPS.
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "no-referrer"
 </IfModule>
-
-# Never serve dotfiles (e.g., accidental .env in web root).
-<FilesMatch "^\.">
-    Require all denied
-</FilesMatch>

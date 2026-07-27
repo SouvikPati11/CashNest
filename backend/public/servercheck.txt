@@ -1,0 +1,11 @@
+CashNest static-file probe: OK.
+
+If you can read this in the browser at
+  https://<domain>/backend/public/servercheck.txt
+then static file serving and the .htaccess in this path parse correctly, and any
+500 you get on index.php is a PHP-handler / file-permission / PHP-code issue —
+NOT an .htaccess parse error.
+
+If this .txt ITSELF returns HTTP 500, the cause is server-level (a rejected
+.htaccess directive or an account/handler problem), because serving a plain text
+file does not execute any PHP. Follow the .htaccess bisection in DEPLOYMENT.md.
