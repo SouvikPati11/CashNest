@@ -33,6 +33,16 @@ runs:
         flutter create --project-name cashnest --org com.cashnest --platforms=android --no-pub .
         find android/app/src/main/kotlin -name 'MainActivity.kt' ! -path '*/com/cashnest/app/*' -delete || true
         find android/app/src/main/kotlin -type d -empty -delete || true
+        # Recent `flutter create` emits Kotlin-DSL Gradle files. This project
+        # commits the Groovy equivalents, and Gradle errors/warns when both a
+        # *.gradle and *.gradle.kts exist. Drop any generated .kts duplicate
+        # that shadows a committed Groovy file so the committed config is used.
+        for f in android/settings.gradle android/build.gradle android/app/build.gradle; do
+          if [ -f "$f" ] && [ -f "$f.kts" ]; then
+            rm -f "$f.kts"
+            echo "Removed generated $f.kts (keeping committed $f)."
+          fi
+        done
         test -f android/gradlew && echo "Gradle wrapper present."
 
     # The google-services Gradle plugin is applied by the committed build.gradle
