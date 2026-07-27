@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release-build:
+    name: Build & publish release artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: ./.github/actions/flutter-setup
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('mobile/android/**/*.gradle', 'mobile/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Prepare Android build
+        uses: ./.github/actions/android-prepare
+        with:
+          keystore_base64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          key_alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          key_password: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          store_password: ${{ secrets.ANDROID_STORE_PASSWORD }}
+
+      - name: Resolve version name
+        id: version
+        shell: bash
+        run: |
+          REF="${GITHUB_REF_NAME}"
+          echo "tag=${REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Build production APK (release)
+        working-directory: mobile
+        run: >-
+          flutter build apk --release
+          --flavor production
+          --dart-define=APP_ENV=production
+
+      - name: Build production App Bundle (release)
+        working-directory: mobile
+        run: >-
+          flutter build appbundle --release
+          --flavor production
+          --dart-define=APP_ENV=production
+
+      - name: Stage renamed artifacts
+        shell: bash
+        working-directory: mobile
+        run: |
+          mkdir -p dist
+          TAG="${{ steps.version.outputs.tag }}"
+          cp build/app/outputs/flutter-apk/app-production-release.apk \
+            "dist/cashnest-${TAG}.apk"
+          cp build/app/outputs/bundle/productionRelease/app-production-release.aab \
+            "dist/cashnest-${TAG}.aab"
+          ls -lh dist
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashnest-release-${{ steps.version.outputs.tag }}
+          path: |
+            mobile/dist/cashnest-${{ steps.version.outputs.tag }}.apk
+            mobile/dist/cashnest-${{ steps.version.outputs.tag }}.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: |
+            mobile/dist/cashnest-${{ steps.version.outputs.tag }}.apk
+            mobile/dist/cashnest-${{ steps.version.outputs.tag }}.aab
+          fail_on_unmatched_files: true

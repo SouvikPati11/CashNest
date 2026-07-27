@@ -1,0 +1,112 @@
+name: "Android build preparation"
+description: "Regenerate Android Gradle wrappers, add a placeholder google-services.json, and configure release signing from secrets."
+
+inputs:
+  keystore_base64:
+    description: "Base64-encoded release keystore (ANDROID_KEYSTORE_BASE64). Empty = debug signing."
+    required: false
+    default: ""
+  key_alias:
+    description: "Key alias (ANDROID_KEY_ALIAS)."
+    required: false
+    default: ""
+  key_password:
+    description: "Key password (ANDROID_KEY_PASSWORD)."
+    required: false
+    default: ""
+  store_password:
+    description: "Keystore password (ANDROID_STORE_PASSWORD)."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    # The repo commits the Android config overlay (manifest, build.gradle,
+    # proguard, res) but not the Flutter-generated Gradle wrapper. Regenerate
+    # the missing scaffolding without overwriting existing files, then drop any
+    # duplicate MainActivity so only the committed com.cashnest.app one remains.
+    - name: Regenerate Android platform scaffolding
+      shell: bash
+      working-directory: mobile
+      run: |
+        flutter create --project-name cashnest --org com.cashnest --platforms=android --no-pub .
+        find android/app/src/main/kotlin -name 'MainActivity.kt' ! -path '*/com/cashnest/app/*' -delete || true
+        find android/app/src/main/kotlin -type d -empty -delete || true
+        test -f android/gradlew && echo "Gradle wrapper present."
+
+    # The google-services Gradle plugin is applied by the committed build.gradle
+    # and requires a config file per applicationId. The real google-services.json
+    # is git-ignored (secret); write a harmless CI placeholder covering every
+    # flavor so builds succeed. Runtime Firebase init is guarded, so a dummy
+    # config never crashes the app — it just disables Firebase in CI artifacts.
+    - name: Provision placeholder google-services.json
+      shell: bash
+      working-directory: mobile
+      run: |
+        if [ -f android/app/google-services.json ]; then
+          echo "google-services.json already present; keeping it."
+          exit 0
+        fi
+        cat > android/app/google-services.json <<'JSON'
+        {
+          "project_info": {
+            "project_number": "000000000000",
+            "project_id": "cashnest-ci",
+            "storage_bucket": "cashnest-ci.appspot.com"
+          },
+          "client": [
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                "android_client_info": { "package_name": "com.cashnest.app" }
+              },
+              "oauth_client": [],
+              "api_key": [ { "current_key": "AIzaSyDUMMY0000000000000000000000000000000" } ],
+              "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+            },
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:0000000000000000000001",
+                "android_client_info": { "package_name": "com.cashnest.app.dev" }
+              },
+              "oauth_client": [],
+              "api_key": [ { "current_key": "AIzaSyDUMMY0000000000000000000000000000001" } ],
+              "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+            },
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:0000000000000000000002",
+                "android_client_info": { "package_name": "com.cashnest.app.staging" }
+              },
+              "oauth_client": [],
+              "api_key": [ { "current_key": "AIzaSyDUMMY0000000000000000000000000000002" } ],
+              "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+            }
+          ],
+          "configuration_version": "1"
+        }
+        JSON
+        echo "Wrote placeholder google-services.json."
+
+    # Decode the release keystore and write android/key.properties from secrets.
+    # When no keystore secret is provided (e.g. fork PRs), the committed
+    # build.gradle falls back to debug signing so the build still succeeds.
+    - name: Configure release signing
+      if: ${{ inputs.keystore_base64 != '' }}
+      shell: bash
+      working-directory: mobile
+      env:
+        KEYSTORE_BASE64: ${{ inputs.keystore_base64 }}
+        KEY_ALIAS: ${{ inputs.key_alias }}
+        KEY_PASSWORD: ${{ inputs.key_password }}
+        STORE_PASSWORD: ${{ inputs.store_password }}
+      run: |
+        echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+        cat > android/key.properties <<EOF
+        storeFile=upload-keystore.jks
+        storePassword=$STORE_PASSWORD
+        keyPassword=$KEY_PASSWORD
+        keyAlias=$KEY_ALIAS
+        EOF
+        echo "Release signing configured."
