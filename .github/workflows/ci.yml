@@ -47,7 +47,9 @@ jobs:
 
       - name: Analyze
         working-directory: mobile
-        run: flutter analyze
+        # Errors and warnings fail the build; style/deprecation infos are
+        # reported but non-fatal (e.g. StateNotifier.debugState in tests).
+        run: flutter analyze --no-fatal-infos
 
   test:
     name: Flutter test

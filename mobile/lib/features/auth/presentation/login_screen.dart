@@ -60,8 +60,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
     setState(() => _submitting = false);
-    if (result is ApiFailure) {
-      setState(() => _error = ErrorMapper.toMessage(result.error, context.l10n));
+    if (result case ApiFailure(:final error)) {
+      final message = ErrorMapper.toMessage(error, context.l10n);
+      setState(() => _error = message);
     }
   }
 
@@ -79,8 +80,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _googleBusy = false);
     if (result == null) {
       setState(() => _error = AuthStrings.of(context).googleCancelled);
-    } else if (result is ApiFailure) {
-      setState(() => _error = ErrorMapper.toMessage(result.error, context.l10n));
+    } else if (result case ApiFailure(:final error)) {
+      final message = ErrorMapper.toMessage(error, context.l10n);
+      setState(() => _error = message);
     }
   }
 

@@ -8,6 +8,7 @@ import 'package:cashnest/features/home/models/home_banner.dart';
 import 'package:cashnest/features/home/models/home_section.dart';
 import 'package:cashnest/features/home/models/home_transaction.dart';
 import 'package:cashnest/features/home/models/wallet_balance.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _balance = WalletBalance(

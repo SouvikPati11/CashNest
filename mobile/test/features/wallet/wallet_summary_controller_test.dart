@@ -7,6 +7,7 @@ import 'package:cashnest/features/wallet/models/transaction_filter.dart';
 import 'package:cashnest/features/wallet/models/transaction_page.dart';
 import 'package:cashnest/features/wallet/models/wallet_summary.dart';
 import 'package:cashnest/features/wallet/models/wallet_transaction.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _summary = WalletSummary(

@@ -31,7 +31,9 @@ abstract final class DioErrorMapper {
       case DioExceptionType.badResponse:
         return _mapResponse(exception);
 
-      case DioExceptionType.unknown:
+      // `unknown`, `transformTimeout`, and any DioExceptionType values added in
+      // newer dio releases fall through to a generic network failure.
+      default:
         return NetworkException('Something went wrong.', cause: exception, stackTrace: stack);
     }
   }

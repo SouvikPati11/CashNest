@@ -56,8 +56,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
       return;
     }
     setState(() => _submitting = false);
-    if (result is ApiFailure) {
-      setState(() => _error = ErrorMapper.toMessage(result.error, context.l10n));
+    if (result case ApiFailure(:final error)) {
+      final message = ErrorMapper.toMessage(error, context.l10n);
+      setState(() => _error = message);
     }
     // On success the auth guard redirects to home automatically.
   }

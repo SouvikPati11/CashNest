@@ -1,6 +1,7 @@
 import 'package:cashnest/core/network/api_result.dart';
 import 'package:cashnest/features/rewards/application/tasks_controller.dart';
 import 'package:cashnest/features/rewards/models/task_action_result.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_rewards_repository.dart';

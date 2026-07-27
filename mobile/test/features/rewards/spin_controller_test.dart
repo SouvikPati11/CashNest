@@ -2,6 +2,7 @@ import 'package:cashnest/core/error/app_exception.dart';
 import 'package:cashnest/core/network/api_result.dart';
 import 'package:cashnest/features/rewards/application/spin_controller.dart';
 import 'package:cashnest/features/rewards/models/spin_result.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_rewards_repository.dart';
