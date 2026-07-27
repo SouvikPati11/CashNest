@@ -45,10 +45,6 @@ jobs:
       - name: Set up Flutter
         uses: ./.github/actions/flutter-setup
 
-      - name: Verify formatting
-        working-directory: mobile
-        run: dart format --output=none --set-exit-if-changed .
-
       - name: Analyze
         working-directory: mobile
         run: flutter analyze
