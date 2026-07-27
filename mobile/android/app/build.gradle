@@ -1,0 +1,98 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after Android/Kotlin.
+    id "dev.flutter.flutter-gradle-plugin"
+    // Firebase (Google services). Safe to keep: the plugin no-ops when
+    // google-services.json is absent in a given flavor build.
+    id "com.google.gms.google-services"
+}
+
+// ── Signing config loaded from android/key.properties (not committed) ────────
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.cashnest.app"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId = "com.cashnest.app"
+        minSdk = 23
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+        multiDexEnabled = true
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+                storeFile = keystoreProperties["storeFile"] ? file(keystoreProperties["storeFile"]) : null
+                storePassword = keystoreProperties["storePassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Fall back to debug signing when no keystore is provided so the
+            // project stays buildable; CI/release provides key.properties.
+            signingConfig = keystorePropertiesFile.exists()
+                ? signingConfigs.release
+                : signingConfigs.debug
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+        debug {
+            signingConfig = signingConfigs.debug
+        }
+    }
+
+    // ── Flavors: dev / staging / production (task 10) ────────────────────────
+    flavorDimensions "env"
+    productFlavors {
+        dev {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue "string", "app_name", "CashNest Dev"
+        }
+        staging {
+            dimension = "env"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            resValue "string", "app_name", "CashNest Staging"
+        }
+        production {
+            dimension = "env"
+            resValue "string", "app_name", "CashNest"
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    // Multidex for older devices.
+    implementation "androidx.multidex:multidex:2.0.1"
+}

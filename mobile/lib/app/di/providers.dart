@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/app_config.dart';
 import '../../core/connectivity/connectivity_service.dart';
 import '../../core/firebase/analytics_service.dart';
+import '../../core/firebase/push_messaging_service.dart';
 import '../../core/localization/locale_controller.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/dio_factory.dart';
+import '../../core/observability/crash_reporter.dart';
+import '../../core/observability/performance_monitor.dart';
 import '../../core/platform/app_info_service.dart';
 import '../../core/storage/hive_cache_service.dart';
 import '../../core/storage/preference_manager.dart';
@@ -77,6 +80,27 @@ final apiClientProvider = Provider<ApiClient>((ref) => ApiClient(ref.watch(dioPr
 
 final analyticsServiceProvider = Provider<AnalyticsService>(
   (ref) => NoopAnalyticsService(ref.watch(appLoggerProvider)),
+);
+
+/// Whether Firebase initialized successfully. Overridden in [bootstrap]; gates
+/// push messaging so the app boots cleanly when Firebase is not configured.
+final firebaseReadyProvider = Provider<bool>((ref) => false);
+
+final pushMessagingServiceProvider = Provider<PushMessagingService>(
+  (ref) => PushMessagingService(ref.watch(appLoggerProvider)),
+);
+
+// ── Observability (crash reporting + performance; task 12/19) ──────────────
+
+/// Crash-reporting hook. Defaults to the logging reporter; override in
+/// [bootstrap] with a Crashlytics-backed implementation in configured builds.
+final crashReporterProvider = Provider<CrashReporter>(
+  (ref) => LoggingCrashReporter(ref.watch(appLoggerProvider)),
+);
+
+/// Performance-monitoring hook. Defaults to a measuring/logging monitor.
+final performanceMonitorProvider = Provider<PerformanceMonitor>(
+  (ref) => NoopPerformanceMonitor(ref.watch(appLoggerProvider)),
 );
 
 // ── UI state controllers ───────────────────────────────────────────────────

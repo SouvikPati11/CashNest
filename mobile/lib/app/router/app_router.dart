@@ -8,6 +8,7 @@ import '../../features/auth/presentation/email_verification_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../core/observability/analytics_route_observer.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/auth/routing/auth_guard.dart';
 import '../../features/error/error_screen.dart';
@@ -19,6 +20,7 @@ import '../../features/rewards/presentation/rewards_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/wallet/presentation/wallet_screen.dart';
 import '../../features/withdraw/presentation/withdraw_screen.dart';
+import '../di/providers.dart';
 import 'app_route_paths.dart';
 import 'home_shell.dart';
 
@@ -47,6 +49,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutePaths.splash,
     refreshListenable: refresh,
+    observers: [AnalyticsRouteObserver(ref.watch(analyticsServiceProvider))],
     redirect: (context, state) => authRedirect(
       status: ref.read(authControllerProvider).status,
       location: state.matchedLocation,

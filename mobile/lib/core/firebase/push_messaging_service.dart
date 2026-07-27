@@ -36,4 +36,15 @@ class PushMessagingService {
   Stream<RemoteMessage> get onForegroundMessage => FirebaseMessaging.onMessage;
 
   Stream<RemoteMessage> get onMessageOpenedApp => FirebaseMessaging.onMessageOpenedApp;
+
+  /// The message that launched the app from a terminated state via a
+  /// notification tap, or `null` if the app was not opened that way.
+  Future<RemoteMessage?> getInitialMessage() async {
+    try {
+      return await _messaging.getInitialMessage();
+    } catch (error, stack) {
+      _logger.warn('Unable to read initial FCM message.', error, stack);
+      return null;
+    }
+  }
 }
