@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/error/app_exception.dart';
 import '../../../core/responsive/responsive.dart';
@@ -8,6 +9,8 @@ import '../../../shared/extensions/context_extensions.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/empty_view.dart';
 import '../../../shared/widgets/error_view.dart';
+import '../../notification/l10n/notification_strings.dart';
+import '../../notification/presentation/widgets/unread_badge.dart';
 import '../l10n/home_strings.dart';
 import '../models/home_announcement.dart';
 import '../models/home_banner.dart';
@@ -101,7 +104,19 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     });
 
     return AppScaffold(
-      appBar: AppBar(title: Text(context.l10n.appName)),
+      appBar: AppBar(
+        title: Text(context.l10n.appName),
+        actions: [
+          UnreadBadge(
+            child: IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              tooltip: NotificationStrings.of(context).title,
+              onPressed: () => context.push('/notifications'),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: switch (state) {
