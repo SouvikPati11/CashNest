@@ -12,6 +12,7 @@ use App\Contracts\RegistrationServiceInterface;
 use App\Contracts\TransactionRunnerInterface;
 use App\Contracts\UserRepositoryInterface;
 use App\Contracts\UserServiceInterface;
+use App\Contracts\WalletRepositoryInterface;
 use App\Services\DatabaseTransactionRunner;
 use App\Services\EmailVerificationService;
 use App\Services\LoginService;
@@ -61,6 +62,7 @@ final class AuthHttpServiceProvider
                 $c->get(AuthenticationServiceInterface::class),
                 $c->get(UserRepositoryInterface::class),
                 $c->get(EmailVerificationServiceInterface::class),
+                $c->get(WalletRepositoryInterface::class),
                 $c->get(LoggerInterface::class)
             )
         );
@@ -70,6 +72,7 @@ final class AuthHttpServiceProvider
             static fn(ContainerInterface $c): LoginService => new LoginService(
                 $c->get(AuthenticationServiceInterface::class),
                 $c->get(UserServiceInterface::class),
+                $c->get(Config::class),
                 $c->get(LoggerInterface::class)
             )
         );

@@ -10,6 +10,7 @@ use App\Models\AuthProvider;
 use App\Services\AuthenticationService;
 use App\Services\LoginService;
 use App\Services\UserService;
+use Core\Config;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\InMemoryAuthenticationRepository;
 use Tests\Support\InMemoryUserRepository;
@@ -33,7 +34,9 @@ final class LoginServiceTest extends TestCase
         $this->providers   = new InMemoryAuthenticationRepository();
         $this->userService = new UserService($this->users, new NullLogger());
         $this->authService = new AuthenticationService($this->providers, new NullLogger());
-        $this->service     = new LoginService($this->authService, $this->userService, new NullLogger());
+        // Enable the email-verification gate so the unverified-login test holds.
+        $config            = new Config(['auth' => ['require_email_verification' => true]]);
+        $this->service     = new LoginService($this->authService, $this->userService, $config, new NullLogger());
     }
 
     /**

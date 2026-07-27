@@ -10,6 +10,7 @@ use App\Contracts\RegistrationServiceInterface;
 use App\Contracts\TransactionRunnerInterface;
 use App\Contracts\UserRepositoryInterface;
 use App\Contracts\UserServiceInterface;
+use App\Contracts\WalletRepositoryInterface;
 use App\Exceptions\HttpException;
 use App\Exceptions\ValidationException;
 use App\Models\AuthProvider;
@@ -32,6 +33,7 @@ final class RegistrationService implements RegistrationServiceInterface
         private AuthenticationServiceInterface $auth,
         private UserRepositoryInterface $userRepository,
         private EmailVerificationServiceInterface $verification,
+        private WalletRepositoryInterface $wallets,
         private LoggerInterface $logger
     ) {
     }
@@ -68,6 +70,14 @@ final class RegistrationService implements RegistrationServiceInterface
                 'password_hash' => $this->auth->hashPassword($password),
                 'is_primary'    => true,
             ]);
+
+            // Every user has exactly one wallet (1—1). Create it in the same
+            // transaction so the account is always ledger-ready; all balance
+            // columns default to zero in the schema.
+            $userId = $user->id();
+            if ($userId !== null && $this->wallets->findByUserId($userId) === null) {
+                $this->wallets->create(['user_id' => $userId]);
+            }
 
             return $user;
         };

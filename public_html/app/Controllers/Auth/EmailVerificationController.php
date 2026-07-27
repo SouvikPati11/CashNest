@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Auth;
 
+use App\Contracts\AuthTokenServiceInterface;
 use App\Contracts\EmailVerificationServiceInterface;
 use App\Contracts\UserServiceInterface;
 use App\Controllers\BaseController;
@@ -24,7 +25,8 @@ final class EmailVerificationController extends BaseController
 {
     public function __construct(
         private EmailVerificationServiceInterface $verification,
-        private UserServiceInterface $users
+        private UserServiceInterface $users,
+        private AuthTokenServiceInterface $tokens
     ) {
     }
 
@@ -57,11 +59,16 @@ final class EmailVerificationController extends BaseController
 
         $user = $this->users->findById($userId);
 
+        // Auto-login after verification: issue tokens so the client is signed in.
+        $tokens = $user !== null
+            ? $this->tokens->issueTokens($user, $request->ip(), $request->userAgent())
+            : null;
+
         return $this->ok(
             [
                 'verified' => true,
                 'user'     => $user !== null ? UserResource::toArray($user) : null,
-                'tokens'   => null,
+                'tokens'   => $tokens,
             ],
             'Email verified successfully.'
         );

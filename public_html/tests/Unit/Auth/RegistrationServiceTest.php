@@ -59,12 +59,40 @@ final class RegistrationServiceTest extends TestCase
             }
         };
 
+        // Minimal in-memory wallet repository (registration creates one wallet).
+        $wallets = new class implements \App\Contracts\WalletRepositoryInterface {
+            /** @var array<int, array<string, mixed>> */
+            public array $created = [];
+            public function find(int|string $id): ?array
+            {
+                return null;
+            }
+            public function findByUserId(int $userId): ?array
+            {
+                return null;
+            }
+            public function lockByUserId(int $userId): ?array
+            {
+                return null;
+            }
+            public function create(array $data): string
+            {
+                $this->created[] = $data;
+                return (string) count($this->created);
+            }
+            public function applyBalances(int $id, array $data): int
+            {
+                return 0;
+            }
+        };
+
         $this->service = new RegistrationService(
             new FakeTransactionRunner(),
             $userService,
             $authService,
             $this->users,
             $this->verification,
+            $wallets,
             new NullLogger()
         );
     }

@@ -17,6 +17,7 @@ use App\Controllers\Settings\AppController;
 use App\Controllers\Settings\BannerController;
 use App\Controllers\Settings\CmsController;
 use App\Controllers\Settings\HomeLayoutController;
+use App\Controllers\Settings\ProfileController;
 use App\Controllers\Settings\RemoteConfigController;
 use App\Controllers\Settings\SettingsController;
 use App\Controllers\Settings\ThemeController;
@@ -25,6 +26,12 @@ use Core\Routing\Router;
 
 return static function (Router $router): void {
     $guarded = ['middleware' => [JwtAuthMiddleware::class]];
+
+    // Authenticated user profile (JWT).
+    $router->group($guarded + ['prefix' => 'v1/profile'], static function (Router $router): void {
+        $router->get('/', [ProfileController::class, 'show']);
+        $router->put('/', [ProfileController::class, 'update']);
+    });
 
     // User settings + preferences (JWT).
     $router->group($guarded + ['prefix' => 'v1/settings'], static function (Router $router): void {

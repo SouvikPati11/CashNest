@@ -10,6 +10,7 @@ use App\Contracts\UserServiceInterface;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\UnauthorizedException;
 use App\Models\User;
+use Core\Config;
 use Core\Contracts\LoggerInterface;
 
 /**
@@ -24,6 +25,7 @@ final class LoginService implements LoginServiceInterface
     public function __construct(
         private AuthenticationServiceInterface $auth,
         private UserServiceInterface $users,
+        private Config $config,
         private LoggerInterface $logger
     ) {
     }
@@ -59,7 +61,10 @@ final class LoginService implements LoginServiceInterface
             throw new ForbiddenException('Your account is not active.', 'ACCOUNT_SUSPENDED');
         }
 
-        if (!$user->hasVerifiedEmail()) {
+        if (
+            (bool) $this->config->get('auth.require_email_verification', false)
+            && !$user->hasVerifiedEmail()
+        ) {
             throw new ForbiddenException('Please verify your email before logging in.', 'EMAIL_NOT_VERIFIED');
         }
 
