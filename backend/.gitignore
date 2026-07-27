@@ -1,5 +1,8 @@
 # Dependencies
-/vendor/
+# NOTE: vendor/ is intentionally committed so the app runs on shared hosting
+# (Hostinger) with no Composer/terminal step after upload. It contains only the
+# production runtime dependency (firebase/php-jwt) plus Composer's optimized
+# autoloader. Regenerate with: composer install --no-dev --optimize-autoloader
 
 # Environment
 .env
