@@ -48,7 +48,20 @@ final class Request
 
         $uri  = $_SERVER['REQUEST_URI'] ?? '/';
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-        $path = '/' . trim(rawurldecode($path), '/');
+        $path = rawurldecode($path);
+
+        // Strip the front-controller's base directory so routes resolve
+        // regardless of where the app is mounted (document root or a
+        // subdirectory such as /backend/public on shared hosting). Route
+        // definitions and the public API are unchanged.
+        $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+        $base       = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+
+        if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+        }
+
+        $path = '/' . trim($path, '/');
 
         $headers = self::extractHeaders($_SERVER);
         $body    = self::parseBody($method, $headers);

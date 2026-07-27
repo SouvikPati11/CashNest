@@ -3,7 +3,7 @@
         'name' => 'cashnest/backend',
         'pretty_version' => 'dev-claude/cashnest-architecture-design-dqgwdw',
         'version' => 'dev-claude/cashnest-architecture-design-dqgwdw',
-        'reference' => '0571a3c1b229abb76020186f28a0dd2b2410a516',
+        'reference' => '34467a5792c80a8e3b05a8fb1672a1eed0e5f9f6',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'cashnest/backend' => array(
             'pretty_version' => 'dev-claude/cashnest-architecture-design-dqgwdw',
             'version' => 'dev-claude/cashnest-architecture-design-dqgwdw',
-            'reference' => '0571a3c1b229abb76020186f28a0dd2b2410a516',
+            'reference' => '34467a5792c80a8e3b05a8fb1672a1eed0e5f9f6',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

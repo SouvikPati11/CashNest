@@ -1,19 +1,38 @@
 # ---------------------------------------------------------------------------
-# CashNest API — root .htaccess (defense in depth)
+# CashNest API — project-root .htaccess (defense in depth)
 #
-# On correctly configured hosting the document root points at `public/`, so this
-# file is never hit. On shared hosts where the docroot cannot be changed and
-# points at the project root, this transparently forwards traffic into public/
-# while keeping framework, config, and storage folders unreachable.
+# Behaviour by layout:
+#   * Document root points at public/            -> this file is never hit
+#     (recommended: set the domain's document root to .../backend/public).
+#   * Document root points at the project root   -> forwards traffic into
+#     public/ transparently.
+#   * App lives in a SUBDIRECTORY of the docroot (e.g. public_html/backend/,
+#     reached at /backend/public/...) -> the !/public/ guard stops the rewrite
+#     from firing once the path already contains /public/, so it never
+#     double-prepends "public/" (the previous rewrite loop that produced
+#     ERR_HTTP2_PROTOCOL_ERROR on LiteSpeed).
+#
+# The framework also strips its own base directory from the request path, so
+# routes resolve correctly whichever of the above applies.
 # ---------------------------------------------------------------------------
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Send everything into the public directory.
-    RewriteCond %{REQUEST_URI} !^/public/
+    # Deny direct HTTP access to framework internals. The pattern is anchored at
+    # the start of the per-directory path, so it blocks /core, /app, /vendor,
+    # etc. as top-level segments WITHOUT affecting API routes such as
+    # /public/v1/app/version (which start with "public/").
+    RewriteRule ^(\.env|\.env\..*|composer\.(json|lock)|core|app|config|routes|storage|database|tests|vendor)(/|$) - [F,L]
+
+    # Forward everything else into public/ — but only when the request is not
+    # already inside a public/ segment and is not a real file/directory here.
+    RewriteCond %{REQUEST_URI} !/public/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
 
-# Block direct access to sensitive locations regardless of rewrite support.
-RedirectMatch 403 ^/?(\.env|composer\.(json|lock)|core|app|config|routes|storage|database|tests|vendor)(/|$)
+# Non-rewrite fallback: .env and composer files never appear in API routes, so
+# they are safe to block outright at any depth.
+RedirectMatch 403 (^|/)(\.env|\.env\..*|composer\.(json|lock))(/|$)
