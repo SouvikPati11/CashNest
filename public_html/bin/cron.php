@@ -9,7 +9,7 @@
  * notification dispatch) will be registered here as feature modules land.
  *
  * Example cPanel cron entry:
- *   * * * * * /usr/bin/php /home/USER/cashnest/backend/bin/cron.php >> /dev/null 2>&1
+ *   * * * * * /usr/bin/php /home/USER/public_html/bin/cron.php >> /dev/null 2>&1
  *
  * @package CashNest
  */

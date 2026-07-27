@@ -19,7 +19,7 @@ declare(strict_types=1);
 header('Content-Type: text/plain; charset=utf-8');
 http_response_code(200);
 
-$basePath = dirname(__DIR__);
+$basePath = __DIR__;
 
 /** Minimal .env reader (no framework dependency). */
 $env = static function (string $key, ?string $default = null) use ($basePath): ?string {

@@ -15,21 +15,29 @@ Built to the finalized specs: `ARCHITECTURE.md`, `DATABASE_DESIGN.md`,
 
 ## Installation
 
+This folder deploys **as the web root** (shared-hosting friendly). `vendor/` is
+committed, so no Composer step is required on the server — just upload the
+contents of this folder into the document root (e.g. Hostinger `public_html/`).
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the File-Manager-only procedure.
+
+For local development:
+
 ```bash
-cd backend
-composer install
+composer install         # optional; vendor/ is already committed
 cp .env.example .env      # then edit values (DB, JWT_SECRET, APP_KEY, ...)
+php -S 127.0.0.1:8000 -t . index.php
 ```
 
-Point your web server's document root at `backend/public/`. On hosts where the
-document root cannot be changed, the root `.htaccess` transparently forwards
-traffic into `public/` while keeping framework folders unreachable.
+The front controller (`index.php`) and `.htaccess` live at the top of this
+folder; the `.htaccess` routes requests to `index.php` and blocks direct HTTP
+access to the framework folders (`app/`, `core/`, `vendor/`, `.env`, ...).
 
 ## Directory layout
 
 ```
-backend/
-├── public/          # Web root — front controller (index.php) + .htaccess
+public_html/         # deploys as the web root
+├── index.php        # front controller
+├── .htaccess        # routing + blocks the framework folders below
 ├── core/            # Framework kernel (container, router, http, db, security, ...)
 │   ├── Cache/       # FileCache (CacheInterface)
 │   ├── Console/     # QueueWorker (cron)
@@ -91,7 +99,7 @@ drivers) · Queue & Cache **interfaces** (file drivers) · Cron foundation
 Register a per-minute cron pointing at the worker:
 
 ```
-* * * * * /usr/bin/php /path/to/backend/bin/cron.php >> /dev/null 2>&1
+* * * * * /usr/bin/php /home/USER/public_html/bin/cron.php >> /dev/null 2>&1
 ```
 
 ## Testing & quality gates

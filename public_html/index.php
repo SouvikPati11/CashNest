@@ -26,9 +26,12 @@ define('CASHNEST_START', microtime(true));
 |--------------------------------------------------------------------------
 | Base path
 |--------------------------------------------------------------------------
-| The application root is one level above this public directory.
+| public_html-root deployment: the front controller lives at the application
+| root, so the base path is this directory. Framework folders (app/, core/,
+| config/, vendor/, storage/, .env, ...) sit beside it and are blocked from
+| direct HTTP access by the .htaccess in this directory.
 */
-$basePath = dirname(__DIR__);
+$basePath = __DIR__;
 
 /*
 |--------------------------------------------------------------------------

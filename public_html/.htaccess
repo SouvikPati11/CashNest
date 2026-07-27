@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# CashNest API — public_html-root .htaccess  (LiteSpeed / Apache safe)
+#
+# Deployment model: the application root IS the web root (public_html/). The
+# front controller (index.php) sits here alongside the framework folders, which
+# are blocked from direct HTTP access below.
+#
+# Every directive is inside an <IfModule> guard, so an unavailable AllowOverride
+# class can never make the server reject this file with HTTP 500. (Unguarded
+# directives such as Options / DirectoryIndex / Require are intentionally
+# avoided — they are the usual cause of "even echo Hello returns 500" on
+# shared LiteSpeed hosting.)
+# ---------------------------------------------------------------------------
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Preserve the Authorization header for Bearer tokens (LSAPI/CGI can strip it).
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Block direct HTTP access to application internals. Anchored at the start of
+    # the per-directory path, so top-level folders are blocked while API routes
+    # such as /v1/app/version (which start with "v1/") are unaffected.
+    RewriteRule ^(app|core|config|database|routes|storage|vendor|tests|bin|resources)(/|$) - [F,L]
+
+    # Block environment and Composer files at any depth.
+    RewriteRule (^|/)\.env - [F,L]
+    RewriteRule (^|/)composer\.(json|lock)$ - [F,L]
+
+    # Front controller: route anything that is not a real file/dir to index.php.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Security headers are safe: if mod_headers is absent the block is skipped.
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "no-referrer"
+</IfModule>

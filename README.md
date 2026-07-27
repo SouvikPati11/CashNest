@@ -11,7 +11,7 @@ service API, with offerwalls, referrals, withdrawals, and push notifications.
 | Path | Description |
 |------|-------------|
 | [`mobile/`](mobile) | Flutter application (Riverpod, GoRouter, Hive, Firebase) |
-| [`backend/`](backend) | Backend service |
+| [`public_html/`](public_html) | Backend service (PHP API + admin) — deploys as the web root on shared hosting |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | System architecture |
 | [`API_SPECIFICATION.md`](API_SPECIFICATION.md) | API contract |
 | [`DATABASE_DESIGN.md`](DATABASE_DESIGN.md) | Data model |
