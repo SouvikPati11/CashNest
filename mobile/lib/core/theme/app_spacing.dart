@@ -12,5 +12,8 @@ abstract final class AppSpacing {
   static const double xxxl = 48;
 
   /// Default screen edge padding.
-  static const double screen = 16;
+  static const double screen = 20;
+
+  /// Vertical rhythm between major dashboard sections.
+  static const double section = 28;
 }

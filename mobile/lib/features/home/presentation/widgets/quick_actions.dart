@@ -78,31 +78,40 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = context.colors.primary;
     return SizedBox(
-      width: 72,
+      width: 76,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.mdAll,
+        borderRadius: AppRadius.lgAll,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Column(
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: context.colors.primaryContainer,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      primary.withValues(alpha: 0.26),
+                      primary.withValues(alpha: 0.10),
+                    ],
+                  ),
                   borderRadius: AppRadius.lgAll,
+                  border: Border.all(color: primary.withValues(alpha: 0.20)),
                 ),
-                child: Icon(icon, color: context.colors.onPrimaryContainer),
+                child: Icon(icon, color: primary, size: 26),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: context.textTheme.labelMedium,
+                style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),

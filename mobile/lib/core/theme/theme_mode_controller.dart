@@ -14,7 +14,9 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
     return switch (prefs.getString(StorageKeys.themeMode)) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
+      'system' => ThemeMode.system,
+      // Premium dark experience by default until the user picks otherwise.
+      _ => ThemeMode.dark,
     };
   }
 

@@ -9,6 +9,7 @@ import '../../../shared/extensions/context_extensions.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/empty_view.dart';
 import '../../../shared/widgets/error_view.dart';
+import '../../../shared/widgets/fade_slide_in.dart';
 import '../../notification/l10n/notification_strings.dart';
 import '../../notification/presentation/widgets/unread_badge.dart';
 import '../l10n/home_strings.dart';
@@ -146,23 +147,41 @@ class _Dashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var step = 0;
+    Widget animated(Widget child) {
+      final widget = FadeSlideIn(
+        delay: Duration(milliseconds: 60 * step),
+        child: child,
+      );
+      step++;
+      return widget;
+    }
+
     final content = ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.screen),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screen,
+        AppSpacing.lg,
+        AppSpacing.screen,
+        AppSpacing.xxl,
+      ),
       children: [
-        ProfileHeader(user: data.user),
+        animated(ProfileHeader(user: data.user)),
         const SizedBox(height: AppSpacing.xl),
-        BalanceCard(balance: data.balance),
-        const SizedBox(height: AppSpacing.xl),
-        ..._sections(context),
-        DailyCheckinCard(onTap: () => onAction('checkin')),
+        animated(BalanceCard(balance: data.balance)),
+        const SizedBox(height: AppSpacing.section),
+        for (final section in _sections(context)) ...[
+          animated(section),
+          const SizedBox(height: AppSpacing.section),
+        ],
+        animated(DailyCheckinCard(onTap: () => onAction('checkin'))),
         const SizedBox(height: AppSpacing.lg),
-        RecentTransactionsPreview(
+        animated(RecentTransactionsPreview(
           transactions: data.recentTransactions,
           onViewAll: () => onAction('wallet'),
-        ),
+        )),
         const SizedBox(height: AppSpacing.lg),
-        ReferralCard(onTap: () => onAction('refer')),
+        animated(ReferralCard(onTap: () => onAction('refer'))),
       ],
     );
 
@@ -181,29 +200,22 @@ class _Dashboard extends StatelessWidget {
   List<Widget> _sections(BuildContext context) {
     if (data.sections.isEmpty) {
       return [
-        Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-          child: EmptyView(
-            icon: Icons.dashboard_customize_outlined,
-            title: HomeStrings.of(context).comingSoon,
-            message: HomeStrings.of(context).quickActions,
-          ),
+        EmptyView(
+          icon: Icons.dashboard_customize_outlined,
+          title: HomeStrings.of(context).comingSoon,
+          message: HomeStrings.of(context).quickActions,
         ),
       ];
     }
-    final widgets = <Widget>[];
-    for (final section in data.sections) {
-      final rendered = SectionRenderer(
-        section: section,
-        banners: data.banners,
-        onAction: onAction,
-        onBannerTap: onBannerTap,
-      );
-      widgets
-        ..add(rendered)
-        ..add(const SizedBox(height: AppSpacing.xl));
-    }
-    return widgets;
+    return [
+      for (final section in data.sections)
+        SectionRenderer(
+          section: section,
+          banners: data.banners,
+          onAction: onAction,
+          onBannerTap: onBannerTap,
+        ),
+    ];
   }
 }
 

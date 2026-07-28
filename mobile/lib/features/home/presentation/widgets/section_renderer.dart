@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../l10n/home_strings.dart';
 import '../../models/home_banner.dart';
 import '../../models/home_section.dart';
 import 'banner_carousel.dart';
@@ -10,8 +10,10 @@ import 'quick_actions.dart';
 
 /// Renders a single server-driven [HomeSection] into its widget.
 ///
-/// Unknown or unsupported `type` values render nothing, keeping the layout
-/// forward-compatible with newer section types the app doesn't yet know about.
+/// Every titled section is introduced with a consistent [SectionHeader] so the
+/// dashboard reads as a structured feed. Unknown or unsupported `type` values
+/// render nothing, keeping the layout forward-compatible with newer section
+/// types the app doesn't yet know about.
 class SectionRenderer extends StatelessWidget {
   const SectionRenderer({
     required this.section,
@@ -39,38 +41,48 @@ class SectionRenderer extends StatelessWidget {
         return _titled(
           context,
           section.title,
-          QuickActions(
-            actionKeys: keys,
-            onAction: onAction,
-          ),
+          QuickActions(actionKeys: keys, onAction: onAction),
         );
 
       case 'offers':
-        return OfferwallPreview(
-          title: section.title,
-          onTap: onAction == null ? null : () => onAction!('offers'),
+        return _titled(
+          context,
+          section.title,
+          OfferwallPreview(onTap: onAction == null ? null : () => onAction!('offers')),
+          actionLabel: HomeStrings.of(context).viewAll,
+          onAction: onAction == null ? null : () => onAction!('offers'),
         );
 
       case 'tasks':
-        return TasksPreview(
-          title: section.title,
-          onTap: onAction == null ? null : () => onAction!('tasks'),
+        return _titled(
+          context,
+          section.title,
+          TasksPreview(onTap: onAction == null ? null : () => onAction!('tasks')),
+          actionLabel: HomeStrings.of(context).viewAll,
+          onAction: onAction == null ? null : () => onAction!('tasks'),
         );
 
       case 'leaderboard':
-        return LeaderboardPreview(
-          title: section.title,
-          onTap: onAction == null ? null : () => onAction!('leaderboard'),
+        return _titled(
+          context,
+          section.title,
+          LeaderboardPreview(onTap: onAction == null ? null : () => onAction!('leaderboard')),
+          actionLabel: HomeStrings.of(context).viewAll,
+          onAction: onAction == null ? null : () => onAction!('leaderboard'),
         );
 
       case 'scratch':
-        return ScratchCardPreview(
-          onTap: onAction == null ? null : () => onAction!('scratch'),
+        return _titled(
+          context,
+          section.title,
+          ScratchCardPreview(onTap: onAction == null ? null : () => onAction!('scratch')),
         );
 
       case 'spin':
-        return SpinWheelPreview(
-          onTap: onAction == null ? null : () => onAction!('spin'),
+        return _titled(
+          context,
+          section.title,
+          SpinWheelPreview(onTap: onAction == null ? null : () => onAction!('spin')),
         );
 
       case 'custom':
@@ -80,15 +92,24 @@ class SectionRenderer extends StatelessWidget {
     }
   }
 
-  Widget _titled(BuildContext context, String? title, Widget child) {
+  Widget _titled(
+    BuildContext context,
+    String? title,
+    Widget child, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     if (title == null || title.isEmpty) {
       return child;
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: context.textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.md),
+        SectionHeader(
+          title: title,
+          actionLabel: actionLabel,
+          onAction: onAction,
+        ),
         child,
       ],
     );
