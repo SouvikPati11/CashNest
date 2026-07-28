@@ -38,10 +38,15 @@ class AppConfig {
   }
 
   static String _defaultBaseUrl(AppEnvironment env) {
+    // Single deployed backend (Hostinger). The `/v1` suffix is part of the base
+    // so repository calls like `/auth/email/register` resolve to
+    // `<host>/v1/auth/email/register`. Override per build with
+    // `--dart-define=API_BASE_URL=https://.../v1` when the API domains diverge.
+    const hostingerBase = 'https://darkred-camel-895917.hostingersite.com/v1';
     return switch (env) {
-      AppEnvironment.production => 'https://api.cashnest.app/v1',
-      AppEnvironment.staging => 'https://staging-api.cashnest.app/v1',
-      AppEnvironment.development => 'https://dev-api.cashnest.app/v1',
+      AppEnvironment.production => hostingerBase,
+      AppEnvironment.staging => hostingerBase,
+      AppEnvironment.development => hostingerBase,
     };
   }
 

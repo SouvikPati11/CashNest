@@ -10,7 +10,9 @@ abstract final class ErrorMapper {
       return error.message.isNotEmpty ? error.message : l10n.errorValidation;
     }
     if (error is UnauthorizedException) {
-      return l10n.errorUnauthorized;
+      // Prefer the server's message (e.g. "Invalid email or password.") so real
+      // 401 responses are shown instead of a generic string.
+      return error.message.isNotEmpty ? error.message : l10n.errorUnauthorized;
     }
     if (error is NetworkException) {
       return l10n.errorNetwork;
