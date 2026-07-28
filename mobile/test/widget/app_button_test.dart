@@ -31,7 +31,9 @@ void main() {
         wrap(AppButton(label: 'Continue', onPressed: () => tapped = true, isLoading: true)),
       );
 
-      await tester.tap(find.byType(FilledButton));
+      // The primary variant renders a custom gradient button (not a
+      // FilledButton), so tap the AppButton itself rather than an inner type.
+      await tester.tap(find.byType(AppButton), warnIfMissed: false);
       expect(tapped, isFalse);
     });
   });
