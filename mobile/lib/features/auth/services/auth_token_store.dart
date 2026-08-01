@@ -35,8 +35,15 @@ class SecureAuthTokenStore implements AuthTokenStore {
 
   @override
   Future<bool> hasSession() async {
-    final token = await _storage.readAccessToken();
-    return token != null && token.isNotEmpty;
+    // The refresh token is the durable credential: while it exists the session
+    // survives access-token expiry (the interceptor mints a new access token on
+    // demand). Fall back to the access token for older sessions.
+    final refresh = await _storage.readRefreshToken();
+    if (refresh != null && refresh.isNotEmpty) {
+      return true;
+    }
+    final access = await _storage.readAccessToken();
+    return access != null && access.isNotEmpty;
   }
 
   @override
