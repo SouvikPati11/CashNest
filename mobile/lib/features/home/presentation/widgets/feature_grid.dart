@@ -40,9 +40,9 @@ class HomeQuickTiles extends StatelessWidget {
       colors: [Color(0xFF22C55E), Color(0xFF15A34A)],
     ),
     _Feature(
-      icon: Icons.sports_esports_rounded,
-      label: 'Games',
-      actionKey: 'games',
+      icon: Icons.card_giftcard_rounded,
+      label: 'Rewards',
+      actionKey: 'rewards',
       colors: [Color(0xFFFF9800), Color(0xFFF57C00)],
     ),
     _Feature(
@@ -128,6 +128,9 @@ class HomeFeatureGrid extends StatelessWidget {
 
   final void Function(String actionKey) onAction;
 
+  // Only features with working screens are shown. Unimplemented spec features
+  // (Math Quiz, Read Article, VideoZone, Games) are intentionally omitted until
+  // built, rather than shown as "Coming Soon".
   static const List<_Feature> _features = [
     _Feature(
       icon: Icons.event_available_rounded,
@@ -138,20 +141,8 @@ class HomeFeatureGrid extends StatelessWidget {
     _Feature(
       icon: Icons.local_fire_department_rounded,
       label: 'Hot Offer',
-      actionKey: 'offers',
+      actionKey: 'tasks',
       colors: [Color(0xFF3A1C71), Color(0xFF4B3FD6)],
-    ),
-    _Feature(
-      icon: Icons.calculate_rounded,
-      label: 'Math Quiz',
-      actionKey: 'quiz',
-      colors: [Color(0xFF2196F3), Color(0xFF1565C0)],
-    ),
-    _Feature(
-      icon: Icons.menu_book_rounded,
-      label: 'Read Article',
-      actionKey: 'article',
-      colors: [Color(0xFF8E2DE2), Color(0xFFC13FEF)],
     ),
     _Feature(
       icon: Icons.card_giftcard_rounded,
@@ -160,16 +151,16 @@ class HomeFeatureGrid extends StatelessWidget {
       colors: [Color(0xFFF7971E), Color(0xFFFFA751)],
     ),
     _Feature(
-      icon: Icons.play_circle_fill_rounded,
-      label: 'VideoZone',
-      actionKey: 'video',
-      colors: [Color(0xFF12C2E9), Color(0xFF2E86DE)],
-    ),
-    _Feature(
       icon: Icons.casino_rounded,
       label: 'Spin & Win',
       actionKey: 'spin',
       colors: [Color(0xFF7B2FE0), Color(0xFF9B5CF6)],
+    ),
+    _Feature(
+      icon: Icons.fact_check_rounded,
+      label: 'Surveys & Offers',
+      actionKey: 'offers',
+      colors: [Color(0xFF12C2E9), Color(0xFF2E86DE)],
     ),
     _Feature(
       icon: Icons.redeem_rounded,

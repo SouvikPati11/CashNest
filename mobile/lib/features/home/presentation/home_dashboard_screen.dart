@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/router/app_route_paths.dart';
 import '../../../core/error/app_exception.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -17,6 +18,10 @@ import '../models/home_announcement.dart';
 import '../models/home_banner.dart';
 import '../models/home_data.dart';
 import '../providers/home_providers.dart';
+import '../../rewards/presentation/daily_checkin_screen.dart';
+import '../../rewards/presentation/scratch_card_screen.dart';
+import '../../rewards/presentation/spin_wheel_screen.dart';
+import '../../rewards/presentation/tasks_screen.dart';
 import 'widgets/announcement_popup.dart';
 import 'widgets/balance_card.dart';
 import 'widgets/banner_carousel.dart';
@@ -79,7 +84,41 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
   }
 
   void _onAction(String actionKey) {
-    _showComingSoon();
+    switch (actionKey) {
+      case 'checkin':
+        _push(const DailyCheckinScreen());
+        break;
+      case 'scratch':
+        _push(const ScratchCardScreen());
+        break;
+      case 'spin':
+        _push(const SpinWheelScreen());
+        break;
+      case 'tasks':
+        _push(const TasksScreen());
+        break;
+      case 'offers':
+        context.go(AppRoutePaths.earn);
+        break;
+      case 'wallet':
+        context.go(AppRoutePaths.wallet);
+        break;
+      case 'rewards':
+        context.go(AppRoutePaths.rewards);
+        break;
+      case 'refer':
+        context.push(AppRoutePaths.referral);
+        break;
+      case 'withdraw':
+        context.push(AppRoutePaths.withdraw);
+        break;
+      default:
+        _showComingSoon();
+    }
+  }
+
+  void _push(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
   void _onBannerTap(HomeBanner banner) {
