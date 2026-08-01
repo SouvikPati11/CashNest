@@ -48,8 +48,8 @@ return [
             'path' => '/admin/r/offerwall', 'permission' => 'offerwall.view', 'group' => 'Earning'],
         ['key' => 'referral', 'label' => 'Referrals',
             'path' => '/admin/r/referral', 'permission' => 'referral.view', 'group' => 'Earning'],
-        ['key' => 'ad_networks', 'label' => 'Ad Networks',
-            'path' => '/admin/r/ad_networks', 'permission' => 'ads.view', 'group' => 'Earning'],
+        // Ad Networks UI is hidden until in-app ads are implemented (no ads are
+        // rendered in the app yet). Table/backend retained for future use.
         ['key' => 'notifications', 'label' => 'Notifications',
             'path' => '/admin/r/notifications', 'permission' => 'notification.view', 'group' => 'Engage'],
         ['key' => 'banners', 'label' => 'Banners',

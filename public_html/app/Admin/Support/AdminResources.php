@@ -91,13 +91,9 @@ final class AdminResources
             'creatable'         => true,
             'deletable'         => true,
         ],
-        'ad_networks' => [
-            'title'      => 'Ad Networks',
-            'table'      => 'ad_networks',
-            'columns'    => ['id', 'name', 'code', 'is_active'],
-            'search'     => ['name', 'code'],
-            'permission' => 'ads.view',
-        ],
+        // 'ad_networks' resource is intentionally omitted: in-app ads are not
+        // implemented yet, so there must be no admin page for it (re-add when
+        // the Ads feature ships).
         'rewards' => [
             'title'             => 'Reward Tasks',
             'table'             => 'tasks',
