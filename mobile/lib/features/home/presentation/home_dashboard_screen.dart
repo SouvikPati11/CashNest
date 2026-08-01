@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/router/app_route_paths.dart';
 import '../../../core/error/app_exception.dart';
@@ -121,8 +122,30 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
-  void _onBannerTap(HomeBanner banner) {
-    _showComingSoon();
+  Future<void> _onBannerTap(HomeBanner banner) async {
+    final value = banner.actionValue;
+    switch (banner.actionType) {
+      case 'url':
+        final uri = (value != null && value.isNotEmpty) ? Uri.tryParse(value) : null;
+        if (uri != null) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+        break;
+      case 'deep_link':
+        if (value != null && value.startsWith('/')) {
+          context.push(value);
+        }
+        break;
+      case 'offer':
+        context.go(AppRoutePaths.earn);
+        break;
+      case 'task':
+        _push(const TasksScreen());
+        break;
+      default:
+        // 'none' or unknown action types are non-interactive.
+        break;
+    }
   }
 
   void _showComingSoon() {
