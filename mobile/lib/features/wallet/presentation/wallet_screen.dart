@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router/app_route_paths.dart';
 import '../../../core/error/app_exception.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -167,7 +169,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         ),
         sliver: SliverList.list(
           children: [
-            BalanceSummaryCard(summary: overview.summary),
+            BalanceSummaryCard(
+              summary: overview.summary,
+              onRedeem: () => context.push(AppRoutePaths.withdraw),
+            ),
             if (overview.conversion != null) ...[
               const SizedBox(height: AppSpacing.lg),
               ConversionCard(conversion: overview.conversion!),
