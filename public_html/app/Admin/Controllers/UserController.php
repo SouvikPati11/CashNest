@@ -9,6 +9,7 @@ use App\Admin\Services\RbacService;
 use App\Admin\Services\ReportService;
 use App\Admin\Services\UserAdminService;
 use App\Admin\View\AdminView;
+use App\Contracts\WalletRepositoryInterface;
 use Core\Http\Request;
 use Core\Http\Response;
 
@@ -22,7 +23,8 @@ final class UserController extends BaseAdminController
         AdminAuthService $auth,
         RbacService $rbac,
         private UserAdminService $users,
-        private ReportService $reports
+        private ReportService $reports,
+        private WalletRepositoryInterface $wallets
     ) {
         parent::__construct($view, $auth, $rbac);
     }
@@ -40,9 +42,11 @@ final class UserController extends BaseAdminController
     {
         $this->authorize('user.view');
 
-        $user = $this->users->find((int) $request->routeParam('id'));
+        $userId = (int) $request->routeParam('id');
+        $user   = $this->users->find($userId);
+        $wallet = $this->wallets->findByUserId($userId);
 
-        return $this->render('users/show', ['user' => $user], 'users');
+        return $this->render('users/show', ['user' => $user, 'wallet' => $wallet], 'users');
     }
 
     public function updateStatus(Request $request): Response
