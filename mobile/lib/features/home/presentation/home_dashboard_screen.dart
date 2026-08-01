@@ -7,9 +7,9 @@ import '../../../core/responsive/responsive.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/extensions/context_extensions.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/empty_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/fade_slide_in.dart';
+import '../../../shared/widgets/section_header.dart';
 import '../../notification/l10n/notification_strings.dart';
 import '../../notification/presentation/widgets/unread_badge.dart';
 import '../l10n/home_strings.dart';
@@ -19,11 +19,11 @@ import '../models/home_data.dart';
 import '../providers/home_providers.dart';
 import 'widgets/announcement_popup.dart';
 import 'widgets/balance_card.dart';
-import 'widgets/feature_previews.dart';
+import 'widgets/banner_carousel.dart';
+import 'widgets/feature_grid.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/profile_header.dart';
 import 'widgets/recent_transactions_preview.dart';
-import 'widgets/section_renderer.dart';
 
 /// The home dashboard: a server-driven, pull-to-refresh dashboard composed of
 /// the balance card, profile header, dynamic layout sections, and fixed feature
@@ -170,18 +170,19 @@ class _Dashboard extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         animated(BalanceCard(balance: data.balance)),
         const SizedBox(height: AppSpacing.section),
-        for (final section in _sections(context)) ...[
-          animated(section),
+        if (data.banners.isNotEmpty) ...[
+          animated(BannerCarousel(banners: data.banners, onBannerTap: onBannerTap)),
           const SizedBox(height: AppSpacing.section),
         ],
-        animated(DailyCheckinCard(onTap: () => onAction('checkin'))),
-        const SizedBox(height: AppSpacing.lg),
+        animated(HomeQuickTiles(onAction: onAction)),
+        const SizedBox(height: AppSpacing.section),
+        animated(const SectionHeader(title: 'Earn Coins')),
+        animated(HomeFeatureGrid(onAction: onAction)),
+        const SizedBox(height: AppSpacing.section),
         animated(RecentTransactionsPreview(
           transactions: data.recentTransactions,
           onViewAll: () => onAction('wallet'),
         )),
-        const SizedBox(height: AppSpacing.lg),
-        animated(ReferralCard(onTap: () => onAction('refer'))),
       ],
     );
 
@@ -195,27 +196,6 @@ class _Dashboard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  List<Widget> _sections(BuildContext context) {
-    if (data.sections.isEmpty) {
-      return [
-        EmptyView(
-          icon: Icons.dashboard_customize_outlined,
-          title: HomeStrings.of(context).comingSoon,
-          message: HomeStrings.of(context).quickActions,
-        ),
-      ];
-    }
-    return [
-      for (final section in data.sections)
-        SectionRenderer(
-          section: section,
-          banners: data.banners,
-          onAction: onAction,
-          onBannerTap: onBannerTap,
-        ),
-    ];
   }
 }
 
