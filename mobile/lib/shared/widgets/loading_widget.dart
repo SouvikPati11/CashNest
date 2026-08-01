@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_spacing.dart';
 import '../extensions/context_extensions.dart';
 
-/// Centered loading indicator with an optional message.
+/// Centered branded loading indicator with an optional message.
 class LoadingWidget extends StatelessWidget {
   const LoadingWidget({this.message, super.key});
 
@@ -15,10 +15,20 @@ class LoadingWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(),
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: context.colors.primary,
+            ),
+          ),
           if (message != null) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text(message!, style: context.textTheme.bodyMedium),
+            Text(
+              message!,
+              style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceVariant),
+            ),
           ],
         ],
       ),

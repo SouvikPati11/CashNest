@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/ds/icon_badge.dart';
 
 /// Shared premium teaser card used by the feature widgets (check-in, scratch,
 /// spin, offerwall, tasks, referral, leaderboard).
@@ -39,23 +40,7 @@ class PreviewCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      accentColor.withValues(alpha: 0.28),
-                      accentColor.withValues(alpha: 0.12),
-                    ],
-                  ),
-                  borderRadius: AppRadius.mdAll,
-                  border: Border.all(color: accentColor.withValues(alpha: 0.22)),
-                ),
-                child: Icon(icon, color: accentColor, size: 24),
-              ),
+              IconBadge(icon: icon, color: accentColor),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(

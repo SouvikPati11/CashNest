@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/ds/icon_badge.dart';
 import '../../l10n/home_strings.dart';
 
 /// A horizontal grid of quick-action shortcuts driven by the layout config.
@@ -78,7 +79,6 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = context.colors.primary;
     return SizedBox(
       width: 76,
       child: InkWell(
@@ -88,23 +88,7 @@ class _QuickAction extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Column(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      primary.withValues(alpha: 0.26),
-                      primary.withValues(alpha: 0.10),
-                    ],
-                  ),
-                  borderRadius: AppRadius.lgAll,
-                  border: Border.all(color: primary.withValues(alpha: 0.20)),
-                ),
-                child: Icon(icon, color: primary, size: 26),
-              ),
+              IconBadge(icon: icon, size: 56, iconSize: 26, radius: AppRadius.lgAll),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 label,

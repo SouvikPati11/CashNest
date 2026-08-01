@@ -8,6 +8,7 @@ import '../../../shared/extensions/context_extensions.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/empty_view.dart';
 import '../../../shared/widgets/error_view.dart';
+import '../../../shared/widgets/section_header.dart';
 import '../application/transactions_state.dart';
 import '../l10n/wallet_strings.dart';
 import '../models/wallet_overview.dart';
@@ -172,8 +173,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               ConversionCard(conversion: overview.conversion!),
             ],
             const SizedBox(height: AppSpacing.xl),
-            Text(s.transactionHistory, style: context.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.md),
+            SectionHeader(title: s.transactionHistory),
             TransactionSearchBar(
               initialValue: txState.searchQuery,
               onChanged: (q) =>

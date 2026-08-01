@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_spacing.dart';
 import '../extensions/context_extensions.dart';
+import 'ds/icon_badge.dart';
 
-/// Inline empty state for lists/collections with no data.
+/// Inline empty state for lists/collections with no data — an [IconBadge], a
+/// title and a message, styled consistently with the design system.
 class EmptyView extends StatelessWidget {
   const EmptyView({
     this.title,
@@ -28,11 +30,11 @@ class EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: context.colors.onSurfaceVariant),
-            const SizedBox(height: AppSpacing.md),
+            IconBadge(icon: icon, size: 72, iconSize: 34, color: context.colors.primary),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               title ?? l10n.emptyTitle,
-              style: context.textTheme.titleMedium,
+              style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xs),
