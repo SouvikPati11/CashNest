@@ -59,7 +59,7 @@ final class AdminWiringTest extends TestCase
     {
         $map = $this->routeMap();
 
-        self::assertCount(24, $map);
+        self::assertCount(27, $map);
         self::assertSame([], $map['GET /admin/login']);
         self::assertContains(CsrfMiddleware::class, $map['POST /admin/login']);
         self::assertNotContains(AdminAuthMiddleware::class, $map['POST /admin/login']);

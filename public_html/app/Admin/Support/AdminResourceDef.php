@@ -27,7 +27,9 @@ final class AdminResourceDef
         public readonly array $search,
         public readonly string $permission,
         public readonly array $editable = [],
-        public readonly string $managePermission = ''
+        public readonly string $managePermission = '',
+        public readonly bool $creatable = false,
+        public readonly bool $deletable = false
     ) {
     }
 
@@ -49,6 +51,8 @@ final class AdminResourceDef
             'permission'       => $this->permission,
             'editable'         => $this->editable,
             'managePermission' => $this->managePermission,
+            'creatable'        => $this->creatable,
+            'deletable'        => $this->deletable,
         ];
     }
 }

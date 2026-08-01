@@ -21,11 +21,15 @@ final class AdminResources
      */
     private const RESOURCES = [
         'banners' => [
-            'title'      => 'Banners',
-            'table'      => 'banners',
-            'columns'    => ['id', 'title', 'placement', 'action_type', 'sort_order', 'is_active'],
-            'search'     => ['title', 'placement'],
-            'permission' => 'content.view',
+            'title'             => 'Banners',
+            'table'             => 'banners',
+            'columns'           => ['id', 'title', 'image_url', 'placement', 'action_type', 'action_value', 'sort_order', 'is_active'],
+            'search'            => ['title', 'placement'],
+            'permission'        => 'content.view',
+            'manage_permission' => 'cms.manage',
+            'editable'          => ['title', 'image_url', 'placement', 'action_type', 'action_value', 'sort_order', 'is_active'],
+            'creatable'         => true,
+            'deletable'         => true,
         ],
         'announcements' => [
             'title'      => 'Announcements',
@@ -171,7 +175,9 @@ final class AdminResources
             array_values(array_map('strval', (array) $row['search'])),
             $permission,
             array_values(array_map('strval', (array) ($row['editable'] ?? []))),
-            (string) ($row['manage_permission'] ?? $permission)
+            (string) ($row['manage_permission'] ?? $permission),
+            (bool) ($row['creatable'] ?? false),
+            (bool) ($row['deletable'] ?? false)
         );
     }
 }

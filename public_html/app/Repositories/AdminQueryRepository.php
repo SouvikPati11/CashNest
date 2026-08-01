@@ -83,6 +83,41 @@ final class AdminQueryRepository implements AdminQueryRepositoryInterface
         );
     }
 
+    public function insert(string $table, array $data): string
+    {
+        $this->assertIdentifier($table);
+
+        if ($data === []) {
+            return '0';
+        }
+
+        $columns  = [];
+        $placeholders = [];
+        $bindings = [];
+
+        foreach ($data as $column => $value) {
+            $this->assertIdentifier((string) $column);
+            $columns[]      = sprintf('`%s`', $column);
+            $placeholders[] = '?';
+            $bindings[]     = $value;
+        }
+
+        return $this->db->insert(
+            sprintf('INSERT INTO `%s` (%s) VALUES (%s)', $table, implode(', ', $columns), implode(', ', $placeholders)),
+            $bindings
+        );
+    }
+
+    public function delete(string $table, int|string $id): int
+    {
+        $this->assertIdentifier($table);
+
+        return $this->db->affectingStatement(
+            sprintf('DELETE FROM `%s` WHERE `id` = ?', $table),
+            [$id]
+        );
+    }
+
     /**
      * Build a LIKE search clause across the given columns.
      *

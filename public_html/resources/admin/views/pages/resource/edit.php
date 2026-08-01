@@ -5,12 +5,13 @@
  * @var \App\Admin\View\ViewRenderer $view
  * @var array<string, mixed> $v
  */
-$resource = is_array($v['resource'] ?? null) ? $v['resource'] : [];
-$row      = is_array($v['row'] ?? null) ? $v['row'] : [];
-$editable = is_array($resource['editable'] ?? null) ? $resource['editable'] : [];
-$key      = (string) ($v['key'] ?? '');
-$id       = (string) ($row['id'] ?? '');
-$title    = (string) ($resource['title'] ?? 'Record');
+$resource  = is_array($v['resource'] ?? null) ? $v['resource'] : [];
+$row       = is_array($v['row'] ?? null) ? $v['row'] : [];
+$editable  = is_array($resource['editable'] ?? null) ? $resource['editable'] : [];
+$key       = (string) ($v['key'] ?? '');
+$id        = (string) ($row['id'] ?? '');
+$title     = (string) ($resource['title'] ?? 'Record');
+$deletable = (bool) ($resource['deletable'] ?? false);
 ?>
 <h1>Edit <?= $view->e($title) ?> #<?= $view->e($id) ?></h1>
 <div class="panel">
@@ -29,4 +30,14 @@ $title    = (string) ($resource['title'] ?? 'Record');
         <button class="btn" type="submit">Save changes</button>
     </form>
 </div>
+<?php if ($deletable): ?>
+    <div class="panel">
+        <h2>Danger zone</h2>
+        <form method="post" action="/admin/r/<?= $view->e($key) ?>/<?= $view->e($id) ?>/delete"
+              onsubmit="return confirm('Delete this record? This cannot be undone.');">
+            <input type="hidden" name="_token" value="<?= $view->e($v['csrf'] ?? '') ?>">
+            <button class="btn bad" type="submit">Delete record</button>
+        </form>
+    </div>
+<?php endif; ?>
 <a class="btn tonal" href="/admin/r/<?= $view->e($key) ?>">Back</a>

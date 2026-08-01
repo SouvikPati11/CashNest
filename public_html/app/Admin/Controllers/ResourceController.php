@@ -61,4 +61,38 @@ final class ResourceController extends BaseAdminController
 
         return $this->redirect('/admin/r/' . $key);
     }
+
+    public function create(Request $request): Response
+    {
+        $key = (string) $request->routeParam('resource');
+
+        $this->authorize($this->resources->createPermission($key));
+
+        return $this->render('resource/create', $this->resources->blankForm($key), $key);
+    }
+
+    public function store(Request $request): Response
+    {
+        $key = (string) $request->routeParam('resource');
+
+        $this->authorize($this->resources->createPermission($key));
+
+        $this->resources->create($key, $request->all(), $this->adminId(), $request->ip());
+        $this->view->flash('success', 'Record created.');
+
+        return $this->redirect('/admin/r/' . $key);
+    }
+
+    public function destroy(Request $request): Response
+    {
+        $key = (string) $request->routeParam('resource');
+        $id  = (int) $request->routeParam('id');
+
+        $this->authorize($this->resources->deletePermission($key));
+
+        $this->resources->delete($key, $id, $this->adminId(), $request->ip());
+        $this->view->flash('success', 'Record deleted.');
+
+        return $this->redirect('/admin/r/' . $key);
+    }
 }

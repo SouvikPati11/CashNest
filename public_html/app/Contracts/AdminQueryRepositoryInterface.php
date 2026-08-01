@@ -45,4 +45,21 @@ interface AdminQueryRepositoryInterface
      * @return int rows affected
      */
     public function update(string $table, int|string $id, array $data): int;
+
+    /**
+     * Insert a row of allowlisted columns; returns the new id.
+     *
+     * The caller (service) restricts `$data` to a trusted column allowlist;
+     * identifiers are validated and values bound.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function insert(string $table, array $data): string;
+
+    /**
+     * Delete a single row by primary key.
+     *
+     * @return int rows affected
+     */
+    public function delete(string $table, int|string $id): int;
 }

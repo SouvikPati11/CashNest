@@ -129,12 +129,124 @@ final class ResourceAdminService
         ]);
     }
 
+    /**
+     * The permission required to create rows for the given resource.
+     *
+     * @throws NotFoundException
+     */
+    public function createPermission(string $key): string
+    {
+        return $this->creatableResource($key)->managePermission;
+    }
+
+    /**
+     * The permission required to delete rows for the given resource.
+     *
+     * @throws NotFoundException
+     */
+    public function deletePermission(string $key): string
+    {
+        return $this->deletableResource($key)->managePermission;
+    }
+
+    /**
+     * Metadata for a blank create form (no backing row).
+     *
+     * @return array<string, mixed>
+     *
+     * @throws NotFoundException
+     */
+    public function blankForm(string $key): array
+    {
+        $resource = $this->creatableResource($key);
+
+        return [
+            'key'      => $key,
+            'resource' => $resource->toArray(),
+            'row'      => [],
+        ];
+    }
+
+    /**
+     * Create a new row from allowlisted columns; returns the new id.
+     *
+     * @param array<string, mixed> $input
+     *
+     * @throws NotFoundException
+     */
+    public function create(string $key, array $input, int $adminId, string $ip): string
+    {
+        $resource = $this->creatableResource($key);
+
+        $data = [];
+        foreach ($resource->editable as $column) {
+            if (array_key_exists($column, $input)) {
+                $data[$column] = $input[$column];
+            }
+        }
+
+        $id = $this->query->insert($resource->table, $data);
+
+        $this->audit->log($adminId, 'resource.create', [
+            'target_type' => $resource->table,
+            'target_id'   => $id,
+            'after'       => $data,
+            'ip'          => $ip,
+        ]);
+
+        return $id;
+    }
+
+    /**
+     * Delete a row from a deletable resource.
+     *
+     * @throws NotFoundException
+     */
+    public function delete(string $key, int $id, int $adminId, string $ip): void
+    {
+        $resource = $this->deletableResource($key);
+
+        if ($this->query->find($resource->table, $id) === null) {
+            throw new NotFoundException('Record not found.');
+        }
+
+        $this->query->delete($resource->table, $id);
+
+        $this->audit->log($adminId, 'resource.delete', [
+            'target_type' => $resource->table,
+            'target_id'   => $id,
+            'ip'          => $ip,
+        ]);
+    }
+
     private function editableResource(string $key): \App\Admin\Support\AdminResourceDef
     {
         $resource = $this->resources->get($key);
 
         if ($resource === null || !$resource->isEditable()) {
             throw new NotFoundException('Unknown or read-only admin resource.');
+        }
+
+        return $resource;
+    }
+
+    private function creatableResource(string $key): \App\Admin\Support\AdminResourceDef
+    {
+        $resource = $this->editableResource($key);
+
+        if (!$resource->creatable) {
+            throw new NotFoundException('Resource does not support creation.');
+        }
+
+        return $resource;
+    }
+
+    private function deletableResource(string $key): \App\Admin\Support\AdminResourceDef
+    {
+        $resource = $this->resources->get($key);
+
+        if ($resource === null || !$resource->deletable) {
+            throw new NotFoundException('Resource does not support deletion.');
         }
 
         return $resource;
