@@ -67,7 +67,9 @@ return static function (Router $router): void {
         $router->get('/admin/settings', [SettingsController::class, 'index']);
         $router->get('/admin/backup', [BackupController::class, 'index']);
 
-        // Generic content/config management browsers.
+        // Generic content/config management browsers (list + generic editor).
         $router->get('/admin/r/{resource}', [ResourceController::class, 'index']);
+        $router->get('/admin/r/{resource}/{id}/edit', [ResourceController::class, 'edit']);
+        $router->post('/admin/r/{resource}/{id}', [ResourceController::class, 'update']);
     });
 };

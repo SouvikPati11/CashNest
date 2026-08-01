@@ -26,4 +26,23 @@ interface AdminQueryRepositoryInterface
      * @param array<int, string> $searchColumns
      */
     public function countRows(string $table, array $searchColumns, ?string $search): int;
+
+    /**
+     * A single row from an allowlisted table by primary key, or null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function find(string $table, int|string $id): ?array;
+
+    /**
+     * Update allowlisted columns of a single row by primary key.
+     *
+     * The caller (service) is responsible for restricting `$data` to a trusted
+     * editable-column allowlist; column names are additionally validated as SQL
+     * identifiers and values are always bound.
+     *
+     * @param array<string, mixed> $data
+     * @return int rows affected
+     */
+    public function update(string $table, int|string $id, array $data): int;
 }

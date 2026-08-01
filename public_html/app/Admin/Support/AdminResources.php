@@ -84,11 +84,40 @@ final class AdminResources
             'permission' => 'ads.view',
         ],
         'rewards' => [
-            'title'      => 'Reward Tasks',
-            'table'      => 'tasks',
-            'columns'    => ['id', 'title', 'reward_coins', 'is_active'],
-            'search'     => ['title'],
-            'permission' => 'reward.view',
+            'title'             => 'Reward Tasks',
+            'table'             => 'tasks',
+            'columns'           => ['id', 'title', 'reward_coins', 'is_active'],
+            'search'            => ['title'],
+            'permission'        => 'rewards.view',
+            'manage_permission' => 'rewards.manage',
+            'editable'          => ['title', 'reward_coins', 'is_active', 'sort_order'],
+        ],
+        'reward_checkin' => [
+            'title'             => 'Daily Check-in Rewards',
+            'table'             => 'checkin_rewards_config',
+            'columns'           => ['id', 'day_number', 'coins', 'is_milestone', 'is_active'],
+            'search'            => [],
+            'permission'        => 'rewards.view',
+            'manage_permission' => 'rewards.manage',
+            'editable'          => ['day_number', 'coins', 'is_milestone', 'is_active'],
+        ],
+        'reward_scratch' => [
+            'title'             => 'Scratch Card Rewards',
+            'table'             => 'scratch_card_config',
+            'columns'           => ['id', 'label', 'reward_coins', 'weight', 'daily_limit', 'is_active'],
+            'search'            => ['label'],
+            'permission'        => 'rewards.view',
+            'manage_permission' => 'rewards.manage',
+            'editable'          => ['label', 'reward_coins', 'weight', 'daily_limit', 'is_active'],
+        ],
+        'reward_spin' => [
+            'title'             => 'Spin Wheel Segments',
+            'table'             => 'spin_wheel_segments',
+            'columns'           => ['id', 'label', 'reward_type', 'reward_coins', 'weight', 'position', 'is_active'],
+            'search'            => ['label'],
+            'permission'        => 'rewards.view',
+            'manage_permission' => 'rewards.manage',
+            'editable'          => ['label', 'reward_coins', 'weight', 'position', 'is_active'],
         ],
         'offerwall' => [
             'title'      => 'Offerwall Providers',
@@ -133,12 +162,16 @@ final class AdminResources
             return null;
         }
 
+        $permission = (string) $row['permission'];
+
         return new AdminResourceDef(
             (string) $row['title'],
             (string) $row['table'],
             array_values(array_map('strval', (array) $row['columns'])),
             array_values(array_map('strval', (array) $row['search'])),
-            (string) $row['permission']
+            $permission,
+            array_values(array_map('strval', (array) ($row['editable'] ?? []))),
+            (string) ($row['manage_permission'] ?? $permission)
         );
     }
 }

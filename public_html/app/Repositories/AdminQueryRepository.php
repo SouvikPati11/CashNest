@@ -48,6 +48,41 @@ final class AdminQueryRepository implements AdminQueryRepositoryInterface
         return (int) ($row['aggregate'] ?? 0);
     }
 
+    public function find(string $table, int|string $id): ?array
+    {
+        $this->assertIdentifier($table);
+
+        return $this->db->selectOne(
+            sprintf('SELECT * FROM `%s` WHERE `id` = ? LIMIT 1', $table),
+            [$id]
+        );
+    }
+
+    public function update(string $table, int|string $id, array $data): int
+    {
+        $this->assertIdentifier($table);
+
+        if ($data === []) {
+            return 0;
+        }
+
+        $sets     = [];
+        $bindings = [];
+
+        foreach ($data as $column => $value) {
+            $this->assertIdentifier((string) $column);
+            $sets[]     = sprintf('`%s` = ?', $column);
+            $bindings[] = $value;
+        }
+
+        $bindings[] = $id;
+
+        return $this->db->affectingStatement(
+            sprintf('UPDATE `%s` SET %s WHERE `id` = ?', $table, implode(', ', $sets)),
+            $bindings
+        );
+    }
+
     /**
      * Build a LIKE search clause across the given columns.
      *

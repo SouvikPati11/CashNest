@@ -38,4 +38,27 @@ final class ResourceController extends BaseAdminController
 
         return $this->render('resource/index', $data, $key);
     }
+
+    public function edit(Request $request): Response
+    {
+        $key = (string) $request->routeParam('resource');
+        $id  = (int) $request->routeParam('id');
+
+        $this->authorize($this->resources->managePermission($key));
+
+        return $this->render('resource/edit', $this->resources->find($key, $id), $key);
+    }
+
+    public function update(Request $request): Response
+    {
+        $key = (string) $request->routeParam('resource');
+        $id  = (int) $request->routeParam('id');
+
+        $this->authorize($this->resources->managePermission($key));
+
+        $this->resources->update($key, $id, $request->all(), $this->adminId(), $request->ip());
+        $this->view->flash('success', 'Record updated.');
+
+        return $this->redirect('/admin/r/' . $key);
+    }
 }
