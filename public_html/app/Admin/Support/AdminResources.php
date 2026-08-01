@@ -80,6 +80,17 @@ final class AdminResources
             'search'     => ['name', 'code'],
             'permission' => 'gateway.view',
         ],
+        'withdraw_methods' => [
+            'title'             => 'Withdraw Methods',
+            'table'             => 'withdraw_methods',
+            'columns'           => ['id', 'name', 'code', 'min_coins', 'max_coins', 'fee_percent', 'fee_flat', 'is_active', 'sort_order'],
+            'search'            => ['name', 'code'],
+            'permission'        => 'withdraw.view',
+            'manage_permission' => 'payments.manage',
+            'editable'          => ['name', 'code', 'min_coins', 'max_coins', 'fee_percent', 'fee_flat', 'icon_url', 'is_active', 'sort_order'],
+            'creatable'         => true,
+            'deletable'         => true,
+        ],
         'ad_networks' => [
             'title'      => 'Ad Networks',
             'table'      => 'ad_networks',
