@@ -145,7 +145,8 @@ final class AdminServiceProvider
             ResourceAdminService::class,
             static fn(ContainerInterface $c): ResourceAdminService => new ResourceAdminService(
                 $c->get(AdminResources::class),
-                $c->get(AdminQueryRepositoryInterface::class)
+                $c->get(AdminQueryRepositoryInterface::class),
+                $c->get(AuditLogService::class)
             )
         );
         $container->singleton(
