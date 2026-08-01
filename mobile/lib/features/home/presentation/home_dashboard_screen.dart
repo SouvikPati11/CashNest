@@ -10,7 +10,6 @@ import '../../../shared/extensions/context_extensions.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/fade_slide_in.dart';
-import '../../../shared/widgets/section_header.dart';
 import '../../notification/l10n/notification_strings.dart';
 import '../../notification/presentation/widgets/unread_badge.dart';
 import '../l10n/home_strings.dart';
@@ -24,11 +23,10 @@ import '../../rewards/presentation/spin_wheel_screen.dart';
 import '../../rewards/presentation/tasks_screen.dart';
 import 'widgets/announcement_popup.dart';
 import 'widgets/balance_card.dart';
-import 'widgets/banner_carousel.dart';
-import 'widgets/feature_grid.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/profile_header.dart';
 import 'widgets/recent_transactions_preview.dart';
+import 'widgets/section_renderer.dart';
 
 /// The home dashboard: a server-driven, pull-to-refresh dashboard composed of
 /// the balance card, profile header, dynamic layout sections, and fixed feature
@@ -224,15 +222,12 @@ class _Dashboard extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         animated(BalanceCard(balance: data.balance)),
         const SizedBox(height: AppSpacing.section),
-        if (data.banners.isNotEmpty) ...[
-          animated(BannerCarousel(banners: data.banners, onBannerTap: onBannerTap)),
+        // Server-driven layout: sections are defined and ordered in the Admin
+        // Panel (home_sections) and rendered here via SectionRenderer.
+        for (final section in _sections()) ...[
+          animated(section),
           const SizedBox(height: AppSpacing.section),
         ],
-        animated(HomeQuickTiles(onAction: onAction)),
-        const SizedBox(height: AppSpacing.section),
-        animated(const SectionHeader(title: 'Earn Coins')),
-        animated(HomeFeatureGrid(onAction: onAction)),
-        const SizedBox(height: AppSpacing.section),
         animated(RecentTransactionsPreview(
           transactions: data.recentTransactions,
           onViewAll: () => onAction('wallet'),
@@ -250,6 +245,20 @@ class _Dashboard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Server-driven home sections (defined/ordered in the Admin Panel). Unknown
+  /// section types render nothing; an empty layout simply shows no sections.
+  List<Widget> _sections() {
+    return [
+      for (final section in data.sections)
+        SectionRenderer(
+          section: section,
+          banners: data.banners,
+          onAction: onAction,
+          onBannerTap: onBannerTap,
+        ),
+    ];
   }
 }
 
