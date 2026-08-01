@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/router/app_route_paths.dart';
 import '../../../core/error/app_exception.dart';
@@ -81,7 +80,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
   }
 
   void _onAnnouncementAction(HomeAnnouncement announcement) {
-    _showComingSoon();
+    _handleContentAction(announcement.actionType, announcement.actionValue);
   }
 
   void _onAction(String actionKey) {
@@ -114,7 +113,8 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
         context.push(AppRoutePaths.withdraw);
         break;
       default:
-        _showComingSoon();
+        // Unknown action keys are non-interactive (no placeholder shown).
+        break;
     }
   }
 
@@ -122,18 +122,18 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
-  Future<void> _onBannerTap(HomeBanner banner) async {
-    final value = banner.actionValue;
-    switch (banner.actionType) {
-      case 'url':
-        final uri = (value != null && value.isNotEmpty) ? Uri.tryParse(value) : null;
-        if (uri != null) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-        break;
+  void _onBannerTap(HomeBanner banner) {
+    _handleContentAction(banner.actionType, banner.actionValue);
+  }
+
+  /// Routes a server-driven banner/announcement action to an in-app
+  /// destination. External URLs ('url') are intentionally inert until external
+  /// linking is enabled; 'none'/unknown types are non-interactive.
+  void _handleContentAction(String actionType, String? actionValue) {
+    switch (actionType) {
       case 'deep_link':
-        if (value != null && value.startsWith('/')) {
-          context.push(value);
+        if (actionValue != null && actionValue.startsWith('/')) {
+          context.push(actionValue);
         }
         break;
       case 'offer':
@@ -143,16 +143,8 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
         _push(const TasksScreen());
         break;
       default:
-        // 'none' or unknown action types are non-interactive.
         break;
     }
-  }
-
-  void _showComingSoon() {
-    final s = HomeStrings.of(context);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(s.comingSoon)));
   }
 
   @override

@@ -43,6 +43,7 @@ class HomeStrings {
   String get open => _t('open');
   String get errorTitle => _t('errorTitle');
   String get comingSoon => _t('comingSoon');
+  String get ok => _t('ok');
 
   String actionLabel(String key) => _values['action_$key'] ?? key;
 
@@ -77,6 +78,7 @@ class HomeStrings {
     'open': 'Open',
     'errorTitle': 'Could not load your dashboard.',
     'comingSoon': 'Coming soon',
+    'ok': 'OK',
     'action_earn': 'Earn',
     'action_spin': 'Spin',
     'action_scratch': 'Scratch',
@@ -120,6 +122,7 @@ class HomeStrings {
     'open': 'খুলুন',
     'errorTitle': 'ড্যাশবোর্ড লোড করা যায়নি।',
     'comingSoon': 'শীঘ্রই আসছে',
+    'ok': 'ঠিক আছে',
     'action_earn': 'আয়',
     'action_spin': 'স্পিন',
     'action_scratch': 'স্ক্র্যাচ',

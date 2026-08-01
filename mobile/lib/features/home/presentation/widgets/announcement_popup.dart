@@ -47,10 +47,12 @@ class _AnnouncementDialog extends StatelessWidget {
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        if (announcement.isDismissible)
+        // A "dismiss" affordance next to an action, so the action button is not
+        // the only way to close an actionable announcement.
+        if (_hasAction && announcement.isDismissible)
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(_hasAction ? s.comingSoon : s.claim),
+            child: Text(s.ok),
           ),
         if (_hasAction)
           FilledButton(
@@ -60,10 +62,10 @@ class _AnnouncementDialog extends StatelessWidget {
             },
             child: Text(s.open),
           )
-        else if (!announcement.isDismissible)
+        else
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(s.claim),
+            child: Text(s.ok),
           ),
       ],
     );

@@ -91,19 +91,6 @@ flutter {
     source = "../.."
 }
 
-// url_launcher's newest Android implementation pulls androidx.core:1.17 and
-// androidx.browser:1.9, whose AAR metadata requires AGP 8.9.1+. This project
-// pins AGP 8.7.3, so pin those transitive androidx artifacts to versions that
-// are compatible with AGP 8.7.x. (Remove once the Android build is upgraded to
-// AGP 8.9.1+.)
-configurations.all {
-    resolutionStrategy {
-        force "androidx.core:core:1.15.0"
-        force "androidx.core:core-ktx:1.15.0"
-        force "androidx.browser:browser:1.8.0"
-    }
-}
-
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     // Multidex for older devices.
