@@ -11,6 +11,7 @@ import '../models/offer.dart';
 import '../providers/offerwall_providers.dart';
 import '../resources/offer_formatters.dart';
 import 'offer_detail_screen.dart';
+import 'widgets/earn_hub_tab.dart';
 import 'widgets/offer_filter_sheet.dart';
 import 'widgets/offer_tile.dart';
 import 'widgets/paginated_list_view.dart';
@@ -24,12 +25,15 @@ class OfferwallScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = OfferwallStrings.of(context);
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: AppScaffold(
         appBar: AppBar(
           title: Text(s.title),
           bottom: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: [
+              const Tab(text: 'Earn'),
               Tab(text: s.tabOffers),
               Tab(text: s.tabCpa),
               Tab(text: s.tabHistory),
@@ -38,6 +42,7 @@ class OfferwallScreen extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
+            EarnHubTab(),
             _OffersTab(source: OfferSource.offerwall),
             _OffersTab(source: OfferSource.cpa),
             _HistoryTab(),
