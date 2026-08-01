@@ -39,11 +39,15 @@ final class AdminResources
             'permission' => 'content.view',
         ],
         'theme' => [
-            'title'      => 'Themes',
-            'table'      => 'themes',
-            'columns'    => ['id', 'name', 'primary_color', 'default_mode', 'is_active'],
-            'search'     => ['name'],
-            'permission' => 'content.view',
+            'title'             => 'Themes',
+            'table'             => 'themes',
+            'columns'           => ['id', 'name', 'primary_color', 'default_mode', 'is_active'],
+            'search'            => ['name'],
+            'permission'        => 'content.view',
+            'manage_permission' => 'cms.manage',
+            // Only the default mode (light/dark/system) + active flag/name are
+            // editable; brand colours are owned by the app's design system.
+            'editable'          => ['name', 'default_mode', 'is_active'],
         ],
         'home_layout' => [
             'title'             => 'Home Layout',

@@ -28,6 +28,19 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
     await _prefs.setString(StorageKeys.themeMode, mode.name);
   }
 
+  /// Whether the user has explicitly chosen a theme mode (vs. the default).
+  bool get userHasChosen => _prefs.has(StorageKeys.themeMode);
+
+  /// Applies the Admin-configured default theme mode, but only when the user has
+  /// not explicitly chosen one. Not persisted, so a later admin change is picked
+  /// up on the next launch. A no-op (graceful fallback) when [mode] is null.
+  void applyServerDefault(ThemeMode? mode) {
+    if (mode == null || userHasChosen || mode == state) {
+      return;
+    }
+    state = mode;
+  }
+
   Future<void> toggle() =>
       set(state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
 }

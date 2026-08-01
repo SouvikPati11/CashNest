@@ -109,6 +109,27 @@ final themeModeControllerProvider = StateNotifierProvider<ThemeModeController, T
   (ref) => ThemeModeController(ref.watch(preferenceManagerProvider)),
 );
 
+/// Admin-configured default theme mode from `GET /v1/theme` (`default_mode`).
+///
+/// Returns null on any failure or unrecognised value so the app falls back to
+/// its own default. Only the light/dark/system mode is consumed — colours,
+/// gradients and typography come from the app's own design system.
+final serverThemeModeProvider = FutureProvider<ThemeMode?>((ref) async {
+  final result = await ref.watch(apiClientProvider).get<ThemeMode?>(
+        '/theme',
+        decoder: (data) {
+          final mode = data is Map ? data['default_mode'] : null;
+          return switch (mode) {
+            'light' => ThemeMode.light,
+            'dark' => ThemeMode.dark,
+            'system' => ThemeMode.system,
+            _ => null,
+          };
+        },
+      );
+  return result.dataOrNull;
+});
+
 final localeControllerProvider = StateNotifierProvider<LocaleController, Locale>(
   (ref) => LocaleController(ref.watch(preferenceManagerProvider)),
 );

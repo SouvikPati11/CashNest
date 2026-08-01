@@ -21,6 +21,13 @@ class CashNestApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeControllerProvider);
     final locale = ref.watch(localeControllerProvider);
 
+    // Apply the Admin-configured default theme mode (Light/Dark/System) unless
+    // the user has chosen their own. Colours/typography stay app-defined; this
+    // fetch fails gracefully (no override) when the API is unavailable.
+    ref.listen(serverThemeModeProvider, (_, next) {
+      ref.read(themeModeControllerProvider.notifier).applyServerDefault(next.valueOrNull);
+    });
+
     return AppLifecycleReactor(
       child: MaterialApp.router(
         title: 'CashNest',
