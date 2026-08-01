@@ -75,11 +75,15 @@ final class AdminResources
             'permission' => 'content.view',
         ],
         'remote_config' => [
-            'title'      => 'Remote Config',
-            'table'      => 'remote_configs',
-            'columns'    => ['id', 'config_key', 'value_type', 'environment', 'is_active'],
-            'search'     => ['config_key'],
-            'permission' => 'config.view',
+            'title'             => 'Remote Config',
+            'table'             => 'remote_configs',
+            'columns'           => ['id', 'config_key', 'value_type', 'value', 'environment', 'is_active'],
+            'search'            => ['config_key'],
+            'permission'        => 'config.view',
+            'manage_permission' => 'settings.manage',
+            // Only the flag's value + active state are editable; the key, type
+            // and environment define the contract the app consumes.
+            'editable'          => ['value', 'is_active'],
         ],
         'payment_gateways' => [
             'title'      => 'Payment Gateways',

@@ -18,36 +18,48 @@ import 'widgets/paginated_list_view.dart';
 import 'widgets/search_field.dart';
 
 /// Offerwall hub with Offers, CPA, and History tabs.
-class OfferwallScreen extends StatelessWidget {
+///
+/// The Offers/CPA tabs surface third-party offers and can be disabled from the
+/// Admin Panel via the `offerwall_enabled` remote-config flag; when disabled the
+/// Earn hub and History remain available. Fail-open: the tabs stay visible while
+/// the flag loads and whenever it is unavailable.
+class OfferwallScreen extends ConsumerWidget {
   const OfferwallScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final s = OfferwallStrings.of(context);
+    final offerwallEnabled = ref.watch(offerwallEnabledProvider).valueOrNull ?? true;
+
+    final tabs = <Tab>[
+      const Tab(text: 'Earn'),
+      if (offerwallEnabled) ...[
+        Tab(text: s.tabOffers),
+        Tab(text: s.tabCpa),
+      ],
+      Tab(text: s.tabHistory),
+    ];
+    final views = <Widget>[
+      const EarnHubTab(),
+      if (offerwallEnabled) ...const [
+        _OffersTab(source: OfferSource.offerwall),
+        _OffersTab(source: OfferSource.cpa),
+      ],
+      const _HistoryTab(),
+    ];
+
     return DefaultTabController(
-      length: 4,
+      length: tabs.length,
       child: AppScaffold(
         appBar: AppBar(
           title: Text(s.title),
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            tabs: [
-              const Tab(text: 'Earn'),
-              Tab(text: s.tabOffers),
-              Tab(text: s.tabCpa),
-              Tab(text: s.tabHistory),
-            ],
+            tabs: tabs,
           ),
         ),
-        body: const TabBarView(
-          children: [
-            EarnHubTab(),
-            _OffersTab(source: OfferSource.offerwall),
-            _OffersTab(source: OfferSource.cpa),
-            _HistoryTab(),
-          ],
-        ),
+        body: TabBarView(children: views),
       ),
     );
   }

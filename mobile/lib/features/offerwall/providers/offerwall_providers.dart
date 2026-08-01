@@ -23,6 +23,24 @@ final offerwallProvidersListProvider = FutureProvider<List<OfferProvider>>((ref)
   return result.dataOrNull ?? const [];
 });
 
+/// Server-driven master switch for the offerwall (`GET /v1/config`,
+/// `offerwall_enabled`). Lets the Admin instantly disable the third-party offer
+/// surface (e.g. a provider/compliance issue) without an app release.
+///
+/// Fail-open: defaults to enabled on any failure, missing key, or unexpected
+/// type, so a config outage never hides the earning surface from valid users.
+final offerwallEnabledProvider = FutureProvider<bool>((ref) async {
+  final result = await ref.watch(apiClientProvider).get<bool>(
+        '/config',
+        query: const {'keys': 'offerwall_enabled'},
+        decoder: (data) {
+          final value = data is Map ? data['offerwall_enabled'] : null;
+          return value is bool ? value : true;
+        },
+      );
+  return result.dataOrNull ?? true;
+});
+
 final offersControllerProvider =
     StateNotifierProvider<OffersController, PaginatedListState<Offer>>(
   (ref) => OffersController(ref.watch(offerwallRepositoryProvider)),
