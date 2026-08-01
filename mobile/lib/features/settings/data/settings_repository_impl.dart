@@ -83,8 +83,10 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   @override
   Future<ApiResult<List<FaqCategory>>> fetchFaqs() {
+    // FAQ is served by the CMS endpoint (GET /v1/cms/faq); the response shape
+    // ({category, slug, items:[{question, answer}]}) matches FaqCategory.
     return _client.get<List<FaqCategory>>(
-      '/support/faqs',
+      '/cms/faq',
       decoder: (data) => _list(data, FaqCategory.fromJson),
     );
   }

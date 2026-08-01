@@ -16,7 +16,7 @@ class FaqItem {
   }
 }
 
-/// FAQ entries grouped by category (`GET /v1/support/faqs`).
+/// FAQ entries grouped by category (`GET /v1/cms/faq`).
 @immutable
 class FaqCategory {
   const FaqCategory({required this.category, required this.items});

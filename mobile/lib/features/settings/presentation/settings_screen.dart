@@ -12,7 +12,6 @@ import 'cms_screen.dart';
 import 'faq_screen.dart';
 import 'language_screen.dart';
 import 'profile_screen.dart';
-import 'support_screen.dart';
 import 'theme_screen.dart';
 import 'widgets/settings_tile.dart';
 
@@ -66,11 +65,8 @@ class SettingsScreen extends ConsumerWidget {
             title: s.faq,
             onTap: () => push(const FaqScreen()),
           ),
-          SettingsTile(
-            icon: Icons.support_agent_outlined,
-            title: s.support,
-            onTap: () => push(const SupportScreen()),
-          ),
+          // Support tickets are hidden until the backend /support/* API exists
+          // (only the DB tables are present today). Screens/models retained.
           SettingsTile(
             icon: Icons.info_outline,
             title: s.about,
